@@ -11,9 +11,9 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
     simsdone = nparticles
     ##Main loop
     while (simsdone < maxsims)
-        iteration++
+        iteration += 1
         ##Calculate variance of current weighted particle approximation
-        currvar = cov(curroutput.parameters, WeightVec(curroutput.weights))
+        currvar = cov(curroutput.parameters, WeightVec(curroutput.weights), vardim=2)
         perturbdist = MvNormal(2.0 .* currvar)
         ##Initialise new reference table
         newparameters = Array(Float64, (abcinput.nparameters, nparticles))
@@ -21,22 +21,22 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
         newabsdiffs = Array(Float64, (abcinput.nsumstats, nparticles))
         nextparticle = 1
         ##Loop to fill up new reference table
-        while (nextparticle <= nparticles && totalsims<maxsims)
+        while (nextparticle <= nparticles && simsdone<maxsims)
             ##Sample parameters from importance density
             proppars = rimportance(curroutput, perturbdist)
             ##Draw summaries
             propstats = abcinput.data2sumstats(abcinput.rdata(proppars))
             absdiff = abs(abcinput.sobs-propstats)
-            simsdone++
+            simsdone += 1
             ##Accept if all prev norms less than corresponding thresholds.
             if propgood(absdiff, norms, thresholds)
                 newparameters[:,nextparticle] = proppars
                 newsumstats[:,nextparticle] = propstats
                 newabsdiffs[:,nextparticle] = absdiff
-                nextparticle++
+                nextparticle += 1
             end
         end
-        ##Stop if not all sims required to continue have been done (because totalsims==maxsims)
+        ##Stop if not all sims required to continue have been done (because simsdone==maxsims)
         if nextparticle<=nparticles
             continue
         end
@@ -57,7 +57,7 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
         ##Record output
         push!(output, curroutput)
         ##Report status
-        print("Iteration $iteration, $totalsims sims done\n")
+        print("Iteration $iteration, $simsdone sims done\n")
         print("Output of most recent stage:\n")
         print(curroutput)
         ##Make some plots as well?
