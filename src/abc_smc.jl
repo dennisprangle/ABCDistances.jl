@@ -1,6 +1,5 @@
-##NB THIS IS AN ADAPTIVE VERSION. I ALSO NEED A STANDARD VERSION. ADD AN ARGUMENT OR MAKE A NEW METHOD?
 ##k is how many particles to accept each time
-function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer) ##Should this be a constructor? Does it need its own output type?
+function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer; adaptive=false) ##Should this be a constructor? Does it need its own output type?
     iteration = 1
     ##First iteration is just standard rejection sampling
     curroutput = ABCOutput(abcinput, nparticles)
@@ -43,8 +42,12 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
         if nextparticle<=nparticles
             continue
         end
-        ##Initialise new norm
-        newnorm = init(abcinput.abcnorm, newsumstats)
+        if (adaptive)
+            ##Initialise new norm      
+            newnorm = init(abcinput.abcnorm, newsumstats)
+        else
+            newnorm = norms[1]
+        end
         push!(norms, newnorm)
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
