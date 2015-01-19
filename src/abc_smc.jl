@@ -5,6 +5,9 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
     ##First iteration is just standard rejection sampling
     curroutput = ABCOutput(abcinput, nparticles)
     ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
+    print("Iteration $iteration, $nparticles sims done\n")
+    print("Output of most recent stage:\n")
+    print(curroutput)
     norms = [curroutput.abcnorm]
     thresholds = [curroutput.distances[k]]
     output = [curroutput]
@@ -46,7 +49,7 @@ function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
         oldoutput = copy(curroutput)
-        curroutput = ABCOutput(nparticles, newparameters, newsumstats, newdistances, zeros(nparticles), newnorm) ##Set new weights to zero for now
+        curroutput = ABCOutput(nparticles, newparameters, newsumstats, distances, zeros(nparticles), newnorm) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate and use new threshold
         push!(thresholds, curroutput.distances[k])
@@ -85,12 +88,14 @@ end
 
 ##Calculate a single importance weight
 function get1weight(x::Array{Float64,1}, in::ABCInput, old::ABCOutput, perturbdist::MvNormal)
-    temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nsims]
+    nparticles = size(old.parameters)[2]
+    temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
     in.dprior(x) / sum(old.weights .* temp)
 end
 
 ##Calculates importance weights
 function getweights(current::ABCOutput, in::ABCInput, old::ABCOutput, perturbdist::MvNormal)
-    weights = [get1weight(current.parameters[:,i], in, old, perturbdist) for i in 1:current.nsims]
+    nparticles = size(current.parameters)[2]
+    weights = [get1weight(current.parameters[:,i], in, old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
 end
