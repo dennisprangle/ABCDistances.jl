@@ -9,14 +9,13 @@
 ##Input for an ABC analysis
 type ABCInput
     rprior::Function
-    ##dprior::Function ##TO DO: add this! Should be optional (default improper uniform?)
+    dprior::Function
     rdata::Function
     data2sumstats::Function
     abcnorm::ABCNorm
     sobs::Array{Float64, 1}
     nparameters::Int32
     nsumstats::Int32    
-    ##Maybe add constructor with sensible defaults?
 end
 
 ##Partial results of ABC analysis
@@ -34,6 +33,21 @@ type ABCOutput
     distances::Array{Float64, 1}
     weights::Array{Float64, 1}
     abcnorm::ABCNorm
+end
+
+#################
+##CONSTRUCTORS
+#################
+##Semi-sensible defaults
+function ABCInput()
+    ABCInput(()->rand(1),  ##rprior U(0,1) prior on 1 parameter
+             (x)->1.0,      ##dprior is improper uniform prior
+             (x)->rand(1), ##rdata is U(0,1) independent of parameters
+             (x)->[1.0],    ##data2sumstats maps any data to [1.0]
+             Euclidean(),  ##abcnorm
+             [1.0],         ##sobs
+             1,             ##nparameters
+             1)             ##nsumstats
 end
 
 #################
