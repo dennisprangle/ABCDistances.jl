@@ -23,6 +23,7 @@ export
   ##Also export MahalanobisGlasso when finished
   
 include("norms.jl")
+include("abc.jl")
 include("abc_rejection.jl")
 include("abc_smc.jl")
 include("gk.jl")
