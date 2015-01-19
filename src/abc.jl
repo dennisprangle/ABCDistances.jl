@@ -75,3 +75,7 @@ function show(io::IO, x::ABCOutput)
         @printf("Parameter %d: %.2e (%.2e,%.2e)\n", i, means[i], CI_lower[i], CI_upper[i])
     end
 end
+
+function copy(out::ABCOutput)
+    ABCOutput(out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcnorm)
+end
