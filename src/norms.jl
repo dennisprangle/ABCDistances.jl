@@ -46,7 +46,8 @@ function MahalanobisDiag()
 end
 
 function init(x::MahalanobisDiag, sumstats::Array)
-    MahalanobisDiag(1.0./std(sumstats, 2))
+    sdev = squeeze(std(sumstats, 2), 2)
+    MahalanobisDiag(1.0./sdev)
 end
 
 function evalnorm(x::MahalanobisDiag, absdiff::Array)
