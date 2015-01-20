@@ -1,8 +1,8 @@
 ##k is how many particles to accept each time
-function doABCSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer; adaptive=false) ##Should this be a constructor? Does it need its own output type?
+function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer; adaptive=false) ##Should this be a constructor? Does it need its own output type?
     iteration = 1
     ##First iteration is just standard rejection sampling
-    curroutput = ABCOutput(abcinput, nparticles)
+    curroutput = abcRejection(abcinput, nparticles)
     ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
     print("Iteration $iteration, $nparticles sims done\n")
     print("Output of most recent stage:\n")

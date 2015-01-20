@@ -11,7 +11,7 @@ export
   ABCInput, RefTable, ABCOutput, ##General ABC types
   sortABCOutput!, show, copy, ##General ABC methods
   rgk, ##g&k methods
-  doABCSMC ##ABCSMC methods
+  abcRejection, abcSMC ##ABC algorithms
   
 include("norms.jl")
 include("abc.jl")

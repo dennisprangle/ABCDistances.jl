@@ -18,13 +18,6 @@ type ABCInput
     nsumstats::Int32    
 end
 
-##Partial results of ABC analysis
-type RefTable
-    nsims::Int32
-    parameters::Array{Float64, 2}
-    sumstats::Array{Float64, 2}
-end
-
 ##Full results of ABC analysis
 type ABCOutput
     nsims::Int32
@@ -78,4 +71,15 @@ end
 
 function copy(out::ABCOutput)
     ABCOutput(out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcnorm)
+end
+
+##Sort output into distance order
+function sortABCOutput!(out::ABCOutput)
+    ##Sort results into closeness order
+    closenessorder = sortperm(out.distances)
+    out.parameters = out.parameters[:,closenessorder]
+    out.sumstats = out.sumstats[:,closenessorder]
+    out.distances = out.distances[closenessorder]
+    out.weights = out.weights[closenessorder]
+    return
 end
