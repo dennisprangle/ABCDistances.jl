@@ -2,7 +2,7 @@ module ABCNorms
 
 using  StatsBase.WeightVec, StatsBase.cov, StatsBase.sample, StatsBase.mean
 import Base.show, Base.copy
-import Distributions.MvNormal, Distributions.Gamma, Distributions.rand, Distributions.pdf
+import Distributions.Normal, Distributions.MvNormal, Distributions.Gamma, Distributions.rand, Distributions.pdf
 
 export
   ABCNorm, Lp, Euclidean, Lognorm, MahalanobisDiag, MahalanobisEmp, ##ABCNorm types
@@ -10,7 +10,7 @@ export
   init, evalnorm, ##ABCNorm methods
   ABCInput, RefTable, ABCOutput, ##General ABC types
   sortABCOutput!, show, copy, ##General ABC methods
-  rgk, unif_os, ##g&k methods
+  rgk, rgk_os, ##g&k methods
   abcRejection, abcSMC ##ABC algorithms
   
 include("norms.jl")

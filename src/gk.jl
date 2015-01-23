@@ -1,4 +1,4 @@
-function z2gk(A, B, g, k, z, c=0.8)
+function z2gk(A::Float64, B::Float64, g::Float64, k::Float64, z::Float64, c=0.8)
     temp = exp(-g*z)
     A + B*(1.0+c*(1.0-temp)/(1.0+temp))*(1.0+z^2)^k*z    
 end
@@ -22,4 +22,13 @@ function unif_os(orderstats::Array{Int32,1}, n::Int32)
     w[p+1] = rand(Gamma(n + 1 - orderstats[p]))
     wsums = cumsum(w)
     wsums[1:p] / wsums[p+1]
+end
+
+##Efficiently simulates g&k order statistics specified in "orderstats" from n total sims
+##orderstats should be in ascending order
+function rgk_os(pars::Array{Float64,1}, orderstats::Array{Int32,1}, n::Int32)
+    (A,B,g,k) = pars
+    u = unif_os(orderstats, n)
+    z = quantile(Normal(), u)
+    map((x)->z2gk(A,B,g,k,x), z)
 end
