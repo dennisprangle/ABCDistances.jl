@@ -10,7 +10,7 @@ function abcRejection(in::ABCInput, nsims::Integer)
     for i in 1:nsims
         pars = in.rprior()
         parameters[:,i] = pars
-        sumstats[:,i] = in.data2sumstats(in.rdata(pars))
+        sumstats[:,i] = in.sample_sumstats(pars)
     end
     newnorm = init(in.abcnorm, sumstats)
     distances = [evalnorm(newnorm, abs(in.sobs-sumstats[:,i])) for i=1:nsims]

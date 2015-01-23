@@ -10,8 +10,9 @@
 type ABCInput
     rprior::Function
     dprior::Function
-    rdata::Function
-    data2sumstats::Function
+    ##rdata::Function
+    ##data2sumstats::Function
+    sample_sumstats::Function
     abcnorm::ABCNorm
     sobs::Array{Float64, 1}
     nparameters::Int32
@@ -35,8 +36,7 @@ end
 function ABCInput()
     ABCInput(()->rand(1),  ##rprior U(0,1) prior on 1 parameter
              (x)->1.0,      ##dprior is improper uniform prior
-             (x)->rand(1), ##rdata is U(0,1) independent of parameters
-             (x)->[1.0],    ##data2sumstats maps any data to [1.0]
+             (x)->rand(1), ##sample_sumstats draws from U(0,1) independent of parameters
              Euclidean(),  ##abcnorm
              [1.0],         ##sobs
              1,             ##nparameters

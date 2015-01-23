@@ -27,7 +27,7 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
             ##Sample parameters from importance density
             proppars = rimportance(curroutput, perturbdist)
             ##Draw summaries
-            propstats = abcinput.data2sumstats(abcinput.rdata(proppars))
+            propstats = abcinput.sample_sumstats(proppars)
             absdiff = abs(abcinput.sobs-propstats)
             simsdone += 1
             ##Accept if all prev norms less than corresponding thresholds.
