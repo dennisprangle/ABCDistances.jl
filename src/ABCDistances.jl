@@ -1,4 +1,4 @@
-module ABCNorms
+module ABCDistances
 
 using  StatsBase.WeightVec, StatsBase.cov, StatsBase.sample, StatsBase.mean
 import Base.show, Base.copy
