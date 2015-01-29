@@ -7,6 +7,8 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
     print("Iteration $iteration, $nparticles sims done\n")
     print("Output of most recent stage:\n")
     print(curroutput)
+    ##For the adaptive algorithm there will be a sequence of norms and thresholds
+    ##In the non-adaptive case norms and thresholds will stay at length 1
     norms = [curroutput.abcnorm]
     thresholds = [curroutput.distances[k]]
     output = [curroutput]
@@ -45,17 +47,22 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         if (adaptive)
             ##Initialise new norm      
             newnorm = init(abcinput.abcnorm, newsumstats)
+            push!(norms, newnorm)
         else
             newnorm = norms[1]
         end
-        push!(norms, newnorm)
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
         oldoutput = copy(curroutput)
         curroutput = ABCOutput(nparticles, newparameters, newsumstats, distances, zeros(nparticles), newnorm) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
-        ##Calculate and use new threshold
-        push!(thresholds, curroutput.distances[k])
+        ##Calculate, store and use new threshold
+        newthreshold = curroutput.distances[k]
+        if (adaptive) 
+            push!(thresholds, newthreshold)
+        else
+            thresholds[1] = newthreshold
+        end
         curroutput.parameters = curroutput.parameters[:,1:k]
         curroutput.sumstats = curroutput.sumstats[:,1:k]
         curroutput.distances = curroutput.distances[1:k]
@@ -73,8 +80,8 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
 end
 
 ##Check if summary statistics meet all of previous acceptance requirements
-function propgood(absdiff::Array, norms::Array, thresholds::Array)
-    ##TO DO: be more specific about types of arguments?
+function propgood(absdiff::Array{Float64, 1}, norms::Array, thresholds::Array{Float64, 1})
+    ##TO DO: how to specify correct type for norms?
     for i in 1:length(norms)
         if evalnorm(norms[i], absdiff)>thresholds[i]
             return false
