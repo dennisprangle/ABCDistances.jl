@@ -6,7 +6,7 @@ Work in progress!
 
 ## Example
 
-First some code to set up the particular problem of interest. This is for infering the parameter of the g-and-k distribution. Some code for this distribution is included in this package.
+First some code to set up the particular problem of interest. This is for infering the parameters of the g-and-k distribution. Some code for this distribution is included in the package.
 
 ```julia
 using ABCDistances
@@ -65,10 +65,9 @@ abcRejection(abcinput, 10000, 0.3)
 ```
 
 The next command runs an ABC SMC algorithm.
-The second argument is how many simulations to accept at each iteration.
-The third is how many to use to produce the next threshold.
-(So below the next threshold uses the 10% quantile.)
-The last argument is how many simulations to perform - the algorithm terminates once this is reached.
+The second argument is how many simulations to produce at each iteration which are below the *previous* threshold.
+The third is how simulations to accept at each iteration.
+The last argument is how many simulations to perform in total - the algorithm terminates once this is reached.
 
 ```
 abcSMC(abcinput, 2000, 200, 1000000);
