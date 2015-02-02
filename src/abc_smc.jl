@@ -1,5 +1,9 @@
-##k is how many particles to accept each time
-function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer; adaptive=false) ##Should this be a constructor? Does it need its own output type?
+##k is how many particles to use
+##nparticles defines the alpha quantile; nparticles=alpha*k
+##maxsims - the algorithm will stop once this many simulations have been performed
+##nsims_for_init - how many simulations to store to initialise the distance function
+##adaptive - whether to use the adaptive or non-adaptive algorithm
+function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
     iteration = 1
     ##First iteration is just standard rejection sampling
     curroutput = abcRejection(abcinput, nparticles)
@@ -23,6 +27,11 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         newparameters = Array(Float64, (abcinput.nparameters, nparticles))
         newsumstats = Array(Float64, (abcinput.nsumstats, nparticles))
         newabsdiffs = Array(Float64, (abcinput.nsumstats, nparticles))
+        if (adaptive)
+            ##Initialise storage of all simulated summaries for use updating the distance function
+            allsumstats = Array(Float64, (abcinput.nsumstats, nsims_for_init))
+            simsdone_thisiteration = 0
+        end
         nextparticle = 1
         ##Loop to fill up new reference table
         while (nextparticle <= nparticles && simsdone<maxsims)
@@ -32,6 +41,10 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
             propstats = abcinput.sample_sumstats(proppars)
             absdiff = abs(abcinput.sobs-propstats)
             simsdone += 1
+            if (adaptive && simsdone_thisiteration < nsims_for_init)
+                simsdone_thisiteration += 1
+                allsumstats[:,simsdone_thisiteration] = propstats
+            end
             ##Accept if all prev norms less than corresponding thresholds.
             if propgood(absdiff, norms, thresholds)
                 newparameters[:,nextparticle] = proppars
@@ -45,8 +58,11 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
             continue
         end
         if (adaptive)
-            ##Initialise new norm      
-            newnorm = init(abcinput.abcnorm, newsumstats)
+            if (simsdone_thisiteration < nsims_for_init)
+                allsumstats = allsumstats[:,1:simsdone_thisiteration]
+            end
+            ##Initialise new norm
+            newnorm = init(abcinput.abcnorm, allsumstats)
             push!(norms, newnorm)
         else
             newnorm = norms[1]
