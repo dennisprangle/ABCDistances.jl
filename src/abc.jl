@@ -35,7 +35,16 @@ end
 ##TO DO
 ##ABC SMC output
 ##type ABCSMCOutput <: ABCOutput
+##    nsims::Int32                   ##Array of cumulative sims used up to end of each iteration
+##    parameters::Array{Float64, 2}  ##3d array
+##    sumstats::Array{Float64, 2}    ##3d array
+##    distances::Array{Float64, 1}   ##2d array?
+##    weights::Array{Float64, 1}     ##2d array
+##    abcnorm::ABCNorm               ##Array
 ##end
+
+##This needs a show function
+##Also want to be able to calculate parameter means and variances for both types of output. We should be able to get marginal variances or matrix.
 
 #################
 ##CONSTRUCTORS
