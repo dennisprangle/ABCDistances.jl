@@ -14,7 +14,7 @@ function abcRejection(in::ABCInput, nsims::Integer)
     end
     newnorm = init(in.abcnorm, sumstats)
     distances = [evalnorm(newnorm, abs(in.sobs-sumstats[:,i])) for i=1:nsims]
-    out = ABCOutput(nsims, parameters, sumstats, distances, ones(nsims), newnorm)
+    out = ABCRejOutput(nsims, parameters, sumstats, distances, ones(nsims), newnorm)
     sortABCOutput!(out)
     out
 end

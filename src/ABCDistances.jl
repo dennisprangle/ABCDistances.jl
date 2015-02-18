@@ -8,7 +8,7 @@ export
   ABCNorm, Lp, Euclidean, Lognorm, MahalanobisDiag, MahalanobisEmp, ##ABCNorm types
   ##Also export MahalanobisGlasso when finished
   init, evalnorm, ##ABCNorm methods
-  ABCInput, RefTable, ABCOutput, ##General ABC types
+  ABCInput, RefTable, ABCOutput, ABCRejOutput, ##General ABC types
   sortABCOutput!, show, copy, ##General ABC methods
   rgk, rgk_os, ##g&k methods
   abcRejection, abcSMC ##ABC algorithms

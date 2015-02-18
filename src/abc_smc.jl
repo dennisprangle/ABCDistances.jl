@@ -70,7 +70,7 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
         oldoutput = copy(curroutput)
-        curroutput = ABCOutput(nparticles, newparameters, newsumstats, distances, zeros(nparticles), newnorm) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(nparticles, newparameters, newsumstats, distances, zeros(nparticles), newnorm) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -107,20 +107,20 @@ function propgood(absdiff::Array{Float64, 1}, norms::Array, thresholds::Array{Fl
 end
 
 ##Samples from importance density defined by prev output
-function rimportance(x::ABCOutput, dist::MvNormal)
-    i = sample(WeightVec(x.weights))
-    x.parameters[:,i] + rand(dist)
+function rimportance(out::ABCRejOutput, dist::MvNormal)
+    i = sample(WeightVec(out.weights))
+    out.parameters[:,i] + rand(dist)
 end
 
 ##Calculate a single importance weight
-function get1weight(x::Array{Float64,1}, in::ABCInput, old::ABCOutput, perturbdist::MvNormal)
+function get1weight(x::Array{Float64,1}, in::ABCInput, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(old.parameters)[2]
     temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
     in.dprior(x) / sum(old.weights .* temp)
 end
 
 ##Calculates importance weights
-function getweights(current::ABCOutput, in::ABCInput, old::ABCOutput, perturbdist::MvNormal)
+function getweights(current::ABCRejOutput, in::ABCInput, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(current.parameters)[2]
     weights = [get1weight(current.parameters[:,i], in, old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
