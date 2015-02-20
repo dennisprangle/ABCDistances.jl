@@ -25,22 +25,24 @@ abstract ABCOutput
 ##Rejection sampling output
 type ABCRejOutput <: ABCOutput
     nsims::Int32
-    parameters::Array{Float64, 2}
-    sumstats::Array{Float64, 2}
-    distances::Array{Float64, 1}
-    weights::Array{Float64, 1}
+    parameters::Array{Float64, 2} ##parameters[i,j] is ith parameter for jth accepted sim
+    sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
+    distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim
+    weights::Array{Float64, 1}    ##weights[i] is weight for ith accepted sim
     abcnorm::ABCNorm
 end
 
 ##TO DO
 ##ABC SMC output
 ##type ABCSMCOutput <: ABCOutput
-##    nsims::Int32                   ##Array of cumulative sims used up to end of each iteration
-##    parameters::Array{Float64, 2}  ##3d array
-##    sumstats::Array{Float64, 2}    ##3d array
-##    distances::Array{Float64, 1}   ##2d array?
-##    weights::Array{Float64, 1}     ##2d array
-##    abcnorm::ABCNorm               ##Array
+##    nsims::Int32                  ##Total number of simulations performed
+##    cusims::Array{Int32, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
+##    parameters::Array{Float64, 3} ##parameters[i,j,k] is ith parameter for jth accepted sim in iteration k
+##    sumstats::Array{Float64, 3}   ##sumstats[i,j,k] is ith sumstat for jth accepted sim in iteration k
+##    distances::Array{Float64, 2}  ##distances[i,j] is distance for ith accepted sim in iteration j
+##    weights::Array{Float64, 2}    ##weights[i,j] is weight for ith accepted sim in iteration j
+##    abcnorms::Array{ABCNorm, 1}    ##abcnorm[i] is norm used in iteration i
+##    thresholds::Array{Float64, 1}  ##threshold[i] is threshold used in iteration i
 ##end
 
 ##This needs a show function
