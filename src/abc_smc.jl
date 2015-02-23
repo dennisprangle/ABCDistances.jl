@@ -27,6 +27,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newparameters = Array(Float64, (abcinput.nparameters, N))
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newabsdiffs = Array(Float64, (abcinput.nsumstats, N))
+        newpriorweights = Array(Float64, N)
         if (adaptive)
             ##Initialise storage of all simulated summaries for use updating the distance function
             allsumstats = Array(Float64, (abcinput.nsumstats, nsims_for_init))
@@ -37,6 +38,11 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
             proppars = rimportance(curroutput, perturbdist)
+            ##Calculate prior weight and reject if zero
+            priorweight = abcinput.dprior(proppars)
+            if (priorweight == 0.0)
+                continue
+            end           
             ##Draw summaries
             propstats = abcinput.sample_sumstats(proppars)
             absdiff = abs(abcinput.sobs-propstats)
@@ -56,6 +62,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 newparameters[:,nextparticle] = proppars
                 newsumstats[:,nextparticle] = propstats
                 newabsdiffs[:,nextparticle] = absdiff
+                newpriorweights[nextparticle] = priorweight
                 nextparticle += 1
             end
         end
@@ -87,7 +94,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         curroutput.parameters = curroutput.parameters[:,1:k]
         curroutput.sumstats = curroutput.sumstats[:,1:k]
         curroutput.distances = curroutput.distances[1:k]
-        curroutput.weights = getweights(curroutput, abcinput, oldoutput, perturbdist)
+        curroutput.weights = getweights(curroutput, newpriorweights, oldoutput, perturbdist)
         ##Record output
         push!(rejOutputs, curroutput)
         ##Report status
@@ -135,15 +142,15 @@ function rimportance(out::ABCRejOutput, dist::MvNormal)
 end
 
 ##Calculate a single importance weight
-function get1weight(x::Array{Float64,1}, in::ABCInput, old::ABCRejOutput, perturbdist::MvNormal)
+function get1weight(x::Array{Float64,1}, priorweight::Float64, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(old.parameters)[2]
     temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
-    in.dprior(x) / sum(old.weights .* temp)
+    priorweight / sum(old.weights .* temp)
 end
 
 ##Calculates importance weights
-function getweights(current::ABCRejOutput, in::ABCInput, old::ABCRejOutput, perturbdist::MvNormal)
+function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(current.parameters)[2]
-    weights = [get1weight(current.parameters[:,i], in, old, perturbdist) for i in 1:nparticles]
+    weights = [get1weight(current.parameters[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
 end
