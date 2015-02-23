@@ -4,22 +4,22 @@
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
-    iteration = 1
     ##First iteration is just standard rejection sampling
-    curroutput = abcRejection(abcinput, nparticles)
-    ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
-    print("Iteration $iteration, $nparticles sims done\n")
+    curroutput = abcRejection(abcinput, k)
+    itsdone = 1
+    print("Iteration $itsdone, $nparticles sims done\n")
     print("Output of most recent stage:\n")
     print(curroutput)
-    ##For the adaptive algorithm there will be a sequence of norms and thresholds
-    ##In the non-adaptive case norms and thresholds will stay at length 1
+    ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
+    ##We record a sequence of norms and thresholds
+    ##(for non-adaptive case all norms the same, and we only use most recent threshold)
     norms = [curroutput.abcnorm]
     thresholds = [curroutput.distances[k]]
-    output = [curroutput]
-    simsdone = nparticles
+    rejOutputs = [curroutput]
+    simsdone = k
+    cusims = [k]
     ##Main loop
     while (simsdone < maxsims)
-        iteration += 1
         ##Calculate variance of current weighted particle approximation
         currvar = cov(curroutput.parameters, WeightVec(curroutput.weights), vardim=2)
         perturbdist = MvNormal(2.0 .* currvar)
@@ -45,8 +45,14 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
                 simsdone_thisiteration += 1
                 allsumstats[:,simsdone_thisiteration] = propstats
             end
-            ##Accept if all prev norms less than corresponding thresholds.
-            if propgood(absdiff, norms, thresholds)
+            if (adaptive)
+                ##Accept if all prev norms less than corresponding thresholds.
+                accept = propgood(absdiff, norms, thresholds)
+            else
+                ##Accept if norm less than current threshold
+                accept = propgood(absdiff, norms[itsdone], thresholds[itsdone])
+            end
+            if (accept)
                 newparameters[:,nextparticle] = proppars
                 newsumstats[:,nextparticle] = propstats
                 newabsdiffs[:,nextparticle] = absdiff
@@ -57,16 +63,19 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         if nextparticle<=nparticles
             continue
         end
+        ##Update counters
+        itsdone += 1
+        push!(cusims, simsdone)
+        ##Create new norm if needed
         if (adaptive)
             if (simsdone_thisiteration < nsims_for_init)
                 allsumstats = allsumstats[:,1:simsdone_thisiteration]
             end
-            ##Initialise new norm
             newnorm = init(abcinput.abcnorm, allsumstats)
-            push!(norms, newnorm)
         else
             newnorm = norms[1]
         end
+        push!(norms, newnorm)
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
         oldoutput = copy(curroutput)
@@ -74,32 +83,45 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
-        if (adaptive) 
-            push!(thresholds, newthreshold)
-        else
-            thresholds[1] = newthreshold
-        end
+        push!(thresholds, newthreshold)
         curroutput.parameters = curroutput.parameters[:,1:k]
         curroutput.sumstats = curroutput.sumstats[:,1:k]
         curroutput.distances = curroutput.distances[1:k]
         curroutput.weights = getweights(curroutput, abcinput, oldoutput, perturbdist)
         ##Record output
-        push!(output, curroutput)
+        push!(rejOutputs, curroutput)
         ##Report status
-        print("Iteration $iteration, $simsdone sims done\n")
+        print("Iteration $itsdone, $simsdone sims done\n")
         print("Output of most recent stage:\n")
         print(curroutput)
         ##Make some plots as well?
         ##Consider alternative stopping conditions? (e.g. zero threshold reached)
     end
-    output
+        
+    ##Put results into ABCSMCOutput object
+    parameters = Array(Float64, (abcinput.nparameters, k, itsdone))
+    sumstats = Array(Float64, (abcinput.nsumstats, k, itsdone))
+    distances = Array(Float64, (k, itsdone))
+    weights = Array(Float64, (k, itsdone))
+    for i in 1:itsdone        
+        parameters[:,:,i] = rejOutputs[i].parameters
+        sumstats[:,:,i] = rejOutputs[i].sumstats
+        distances[:,i] = rejOutputs[i].distances
+        weights[:,i] = rejOutputs[i].weights
+    end
+    output = ABCSMCOutput(itsdone, simsdone, cusims, parameters, sumstats, distances, weights, norms, thresholds)
+end
+
+##Check if summary statistics meet acceptance requirement
+function propgood(absdiff::Array{Float64, 1}, norm::ABCNorm, threshold::Float64)
+    return evalnorm(norm, absdiff)<=threshold
 end
 
 ##Check if summary statistics meet all of previous acceptance requirements
 function propgood(absdiff::Array{Float64, 1}, norms::Array, thresholds::Array{Float64, 1})
     ##TO DO: how to specify correct type for norms?
     for i in 1:length(norms)
-        if evalnorm(norms[i], absdiff)>thresholds[i]
+        if !propgood(absdiff, norms[i], thresholds[i])
             return false
         end
     end
