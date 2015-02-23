@@ -1,13 +1,13 @@
 ##k is how many particles to use
-##nparticles defines the alpha quantile; nparticles=alpha*k
+##N is how many acceptances to require at each iteration
 ##maxsims - the algorithm will stop once this many simulations have been performed
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
-function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
+function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
     ##First iteration is just standard rejection sampling
-    curroutput = abcRejection(abcinput, k)
+    curroutput = abcRejection(abcinput, N, k)
     itsdone = 1
-    print("Iteration $itsdone, $nparticles sims done\n")
+    print("Iteration $itsdone, $N sims done\n")
     print("Output of most recent stage:\n")
     print(curroutput)
     ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
@@ -16,17 +16,17 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
     norms = [curroutput.abcnorm]
     thresholds = [curroutput.distances[k]]
     rejOutputs = [curroutput]
-    simsdone = k
-    cusims = [k]
+    simsdone = N
+    cusims = [N]
     ##Main loop
     while (simsdone < maxsims)
         ##Calculate variance of current weighted particle approximation
         currvar = cov(curroutput.parameters, WeightVec(curroutput.weights), vardim=2)
         perturbdist = MvNormal(2.0 .* currvar)
         ##Initialise new reference table
-        newparameters = Array(Float64, (abcinput.nparameters, nparticles))
-        newsumstats = Array(Float64, (abcinput.nsumstats, nparticles))
-        newabsdiffs = Array(Float64, (abcinput.nsumstats, nparticles))
+        newparameters = Array(Float64, (abcinput.nparameters, N))
+        newsumstats = Array(Float64, (abcinput.nsumstats, N))
+        newabsdiffs = Array(Float64, (abcinput.nsumstats, N))
         if (adaptive)
             ##Initialise storage of all simulated summaries for use updating the distance function
             allsumstats = Array(Float64, (abcinput.nsumstats, nsims_for_init))
@@ -34,7 +34,7 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         end
         nextparticle = 1
         ##Loop to fill up new reference table
-        while (nextparticle <= nparticles && simsdone<maxsims)
+        while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
             proppars = rimportance(curroutput, perturbdist)
             ##Draw summaries
@@ -60,7 +60,7 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
             end
         end
         ##Stop if not all sims required to continue have been done (because simsdone==maxsims)
-        if nextparticle<=nparticles
+        if nextparticle<=N
             continue
         end
         ##Update counters
@@ -77,9 +77,9 @@ function abcSMC(abcinput::ABCInput, nparticles::Integer, k::Integer, maxsims::In
         end
         push!(norms, newnorm)
         ##Calculate distances
-        distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:nparticles ]
+        distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:N ]
         oldoutput = copy(curroutput)
-        curroutput = ABCRejOutput(nparticles, newparameters, newsumstats, distances, zeros(nparticles), newnorm) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(N, newparameters, newsumstats, distances, zeros(N), newnorm) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
