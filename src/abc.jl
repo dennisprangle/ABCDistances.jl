@@ -32,18 +32,18 @@ type ABCRejOutput <: ABCOutput
     abcnorm::ABCNorm
 end
 
-##TO DO
 ##ABC SMC output
-##type ABCSMCOutput <: ABCOutput
-##    nsims::Int32                  ##Total number of simulations performed
-##    cusims::Array{Int32, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
-##    parameters::Array{Float64, 3} ##parameters[i,j,k] is ith parameter for jth accepted sim in iteration k
-##    sumstats::Array{Float64, 3}   ##sumstats[i,j,k] is ith sumstat for jth accepted sim in iteration k
-##    distances::Array{Float64, 2}  ##distances[i,j] is distance for ith accepted sim in iteration j
-##    weights::Array{Float64, 2}    ##weights[i,j] is weight for ith accepted sim in iteration j
-##    abcnorms::Array{ABCNorm, 1}    ##abcnorm[i] is norm used in iteration i
-##    thresholds::Array{Float64, 1}  ##threshold[i] is threshold used in iteration i
-##end
+type ABCSMCOutput <: ABCOutput
+    niterations::Int32            ##Number of iteration performed
+    nsims::Int32                  ##Total number of simulations performed
+    cusims::Array{Int32, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
+    parameters::Array{Float64, 3} ##parameters[i,j,k] is ith parameter for jth accepted sim in iteration k
+    sumstats::Array{Float64, 3}   ##sumstats[i,j,k] is ith sumstat for jth accepted sim in iteration k
+    distances::Array{Float64, 2}  ##distances[i,j] is distance for ith accepted sim in iteration j
+    weights::Array{Float64, 2}    ##weights[i,j] is weight for ith accepted sim in iteration j
+    abcnorms::Array{ABCNorm, 1}    ##abcnorm[i] is norm used in iteration i
+    thresholds::Array{Float64, 1}  ##threshold[i] is threshold used in iteration i
+end
 
 ##This needs a show function
 ##Also want to be able to calculate parameter means and variances for both types of output. We should be able to get marginal variances or matrix.
