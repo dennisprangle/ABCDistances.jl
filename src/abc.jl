@@ -69,12 +69,11 @@ end
 #################
 function show(io::IO, out::ABCRejOutput)
     (p,k) = size(out.parameters)
-    means = Array(Float64, p)
+    means = parameter_means(out)
     CI_lower = Array(Float64, p)
     CI_upper = Array(Float64, p)
     for i in 1:p
         y = squeeze(out.parameters[i,:], 1)
-        means[i] = sum(y.*out.weights)/sum(out.weights)
         if (maximum(out.weights)==minimum(out.weights)) 
           (CI_lower[i], CI_upper[i]) = quantile(y, [0.025,0.975])
         else
