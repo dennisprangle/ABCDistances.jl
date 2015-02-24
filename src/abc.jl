@@ -107,14 +107,42 @@ end
 
 ##Return the parameter means (a vector)
 function parameter_means(out::ABCRejOutput)
-    mean(out.parameters, WeightVec(out.weights),2)
+    mean(out.parameters, WeightVec(out.weights), 2)
 end
 
-##Return a matrix of parameter means. The [i,j] entry is for parameter i in iteration j.
+##Return parameter means in each iteration. The [i,j] entry is for parameter i in iteration j.
 function parameter_means(out::ABCSMCOutput)
     means = Array(Float64, (out.nparameters, out.niterations))
     for (it in 1:out.niterations)
       means[:, it] = mean(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
     end
     means
+end
+
+##Return marginal parameter variances (a vector)
+function parameter_vars(out::ABCRejOutput)
+  var(out.parameters, WeightVec(out.weights), 2)
+end
+
+##Return marginal parameter variances in each iteration. The [i,j] entry is for parameter i in iteration j.
+function parameter_vars(out::ABCSMCOutput)
+    vars = Array(Float64, (out.nparameters, out.niterations))
+    for (it in 1:out.niterations)
+      vars[:, it] = var(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
+    end
+    vars
+end
+
+##Return parameter covariance matrix
+function parameter_covs(out::ABCRejOutput)
+    cov(out.parameters, WeightVec(out.weights), vardim=2)
+end
+
+##Return parameter covariance matrix for each iteration. The [:,:,k] entry is for iteration k.
+function parameter_covs(out::ABCSMCOutput)
+    covs = Array(Float64, (out.nparameters, out.nparameters, out.niterations))
+    for (it in 1:out.niterations)
+      covs[:, :, it] = cov(out.parameters[:,:,it], WeightVec(out.weights[:,it]), vardim=2)
+    end
+    covs
 end
