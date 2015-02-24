@@ -22,6 +22,8 @@ abstract ABCOutput
 
 ##Rejection sampling output
 type ABCRejOutput <: ABCOutput
+    nparameters::Int32
+    nsumstats::Int32 
     nsims::Int32
     parameters::Array{Float64, 2} ##parameters[i,j] is ith parameter for jth accepted sim
     sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
@@ -89,7 +91,7 @@ function show(io::IO, out::ABCRejOutput)
 end
 
 function copy(out::ABCRejOutput)
-    ABCRejOutput(out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcnorm)
+    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcnorm)
 end
 
 ##Sort output into distance order

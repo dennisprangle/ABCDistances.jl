@@ -86,7 +86,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Calculate distances
         distances = [ evalnorm(newnorm, newabsdiffs[:,i]) for i=1:N ]
         oldoutput = copy(curroutput)
-        curroutput = ABCRejOutput(N, newparameters, newsumstats, distances, zeros(N), newnorm) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(abcinput.nparameters, abcinput.nsumstats, N, newparameters, newsumstats, distances, zeros(N), newnorm) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
