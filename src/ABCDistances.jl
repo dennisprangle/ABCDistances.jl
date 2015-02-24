@@ -9,7 +9,7 @@ export
   ##Also export MahalanobisGlasso when finished
   init, evalnorm, ##ABCNorm methods
   ABCInput, RefTable, ABCOutput, ABCRejOutput, ##General ABC types
-  sortABCOutput!, show, copy, ##General ABC methods
+  sortABCOutput!, show, copy, parameter_means, ##General ABC methods
   rgk, rgk_os, ##g&k methods
   abcRejection, abcSMC ##ABC algorithms
   

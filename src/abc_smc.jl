@@ -116,7 +116,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         distances[:,i] = rejOutputs[i].distances
         weights[:,i] = rejOutputs[i].weights
     end
-    output = ABCSMCOutput(itsdone, simsdone, cusims, parameters, sumstats, distances, weights, norms, thresholds)
+    output = ABCSMCOutput(abcinput.nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, norms, thresholds)
 end
 
 ##Check if summary statistics meet acceptance requirement

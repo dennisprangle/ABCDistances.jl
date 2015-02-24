@@ -32,6 +32,8 @@ end
 
 ##ABC SMC output
 type ABCSMCOutput <: ABCOutput
+    nparameters::Int32
+    nsumstats::Int32  
     niterations::Int32            ##Number of iteration performed
     nsims::Int32                  ##Total number of simulations performed
     cusims::Array{Int32, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
@@ -99,4 +101,18 @@ function sortABCOutput!(out::ABCRejOutput)
     out.distances = out.distances[closenessorder]
     out.weights = out.weights[closenessorder]
     return
+end
+
+##Return the parameter means (a vector)
+function parameter_means(out::ABCRejOutput)
+    mean(out.parameters, WeightVec(out.weights),2)
+end
+
+##Return a matrix of parameter means. The [i,j] entry is for parameter i in iteration j.
+function parameter_means(out::ABCSMCOutput)
+    means = Array(Float64, (out.nparameters, out.niterations))
+    for (it in 1:out.niterations)
+      means[:, it] = mean(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
+    end
+    means
 end
