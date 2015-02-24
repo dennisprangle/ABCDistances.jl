@@ -10,8 +10,6 @@
 type ABCInput
     rprior::Function
     dprior::Function
-    ##rdata::Function
-    ##data2sumstats::Function
     sample_sumstats::Function
     abcnorm::ABCNorm
     sobs::Array{Float64, 1}
