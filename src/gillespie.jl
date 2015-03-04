@@ -8,7 +8,7 @@ immutable Stoichiometry
     input_species::Array{Int32, 1}
     input_indices::Array{Int32, 1}
     ##change[i,j] represents net change in number of units of species i from reaction j
-    change::Array{Int16, 2}
+    change::Array{Int32, 2}
 
     function Stoichiometry(nspecies, nreactions, input_length, input_reactions, input_species, input_indices, change)
         if (nspecies < 1)
@@ -36,6 +36,35 @@ immutable Stoichiometry
         end            
         new(nspecies, nreactions, input_length, input_reactions, input_species, input_indices, change)
     end
+end
+
+##Stoichiometry constructor using P (inputs) and Q (outputs) matrices as in Owen et at 2014. (i.e. P[i,j] is number of species j required for reaction i, and Q[i,j] is number of species j output by reaction i).
+function Stoichiometry(P::Array{Int32, 2}, Q::Array{Int32, 2})
+    if (size(P) != size(Q))
+        error("Dimensions of P and Q must be the same")
+    elseif (minimum(P) < 0)
+        error("All P elements must be non-negative")
+    elseif (minimum(Q) < 0)
+        error("All Q elements must be non-negative")
+    end
+    (nreactions, nspecies) = size(P)
+    input_length = 0
+    input_reactions = Array(Int32, 0)
+    input_species = Array(Int32, 0)
+    input_indices = Array(Int32, 0)
+    ##Store the non-zero elements of P
+    for (this_reaction in 1:nreactions)
+        for (this_species in 1:nspecies)
+            this_index = P[this_reaction, this_species]
+            if (this_index > 0)
+                push!(input_reactions, this_reaction)
+                push!(input_species, this_species)
+                push!(input_indices, this_index)
+                input_length += 1
+            end
+        end
+    end
+    Stoichiometry(nspecies, nreactions, input_length, input_reactions, input_species, input_indices, (Q-P)')
 end
 
 ##Simulate forward 1 event
