@@ -116,3 +116,55 @@ function evaldist(x::MahalanobisEmp, s::Array{Float64, 1})
     absdiff = abs(x.sobs - s)
     (absdiff' * x.Ω * absdiff)[1]
 end
+
+type MahalanobisNP <: ABCDistance
+    sobs::Array{Float64, 1} ##Observed summaries
+    zobs::Array{Float64, 1} ##Observed summaries transformed to normal variates
+    sumstats::Array{Float64, 2} ##Sorted summaries sampled via importance dist. sumstats[i,j] is ith largest value for summary j.
+end
+
+function MahalanobisNP(sobs::Array{Float64, 1})
+    MahalanobisNP(sobs, [0.5], eye(1))
+end
+
+function init(x::MahalanobisNP, sumstats::Array{Float64, 2})
+    Sin = hcat(sumstats, x.sobs) ##Include the observations as well
+    (nstats, nsims) = size(Sin)
+    Sout = zeros(nsims, nstats)
+    for i in 1:nstats
+        Sout[:,i] = sort(vec(Sin[i,:]))
+    end
+    zobs = [pw_cdf(Sout[:,i], x.sobs[i]) for i in 1:nstats]
+    zobs = quantile(Normal(), zobs)
+    MahalanobisNP(x.sobs, zobs, Sout)
+end
+
+function evaldist(x::MahalanobisNP, s::Array{Float64, 1})
+    z = [pw_cdf(x.sumstats[:,i], s[i]) for i in 1:length(s)]
+    z = quantile(Normal(), z)
+    absdiff = abs(x.zobs - z)
+    norm(absdiff, 2.0)
+end
+
+##Piece-wise linear cdf estimate for x from sorted data a
+function pw_cdf(a::Array{Float64, 1}, x::Float64)
+    n = length(a)
+    i = searchsortedfirst(a, x)
+    ##(al, ar) are values used for interpolation
+    ##(cl, cr) are cdf values at these points
+    if (i==1)
+        al = a[1]
+        ar = a[2]
+        (cl, cr) = [1,2]/(n+1)
+    elseif (i==n+1)
+        al = a[n-1]
+        ar = a[n]
+        (cl, cr) = [n-1,n]/(n+1)
+    else
+        al = a[i-1]
+        ar = a[i]
+        (cl, cr) = [i-1,i]/(n+1)
+    end
+    y = cl + (cr-cl)*(x-al)/(ar-al)
+    max(0.0, min(y,1.0))    
+end
