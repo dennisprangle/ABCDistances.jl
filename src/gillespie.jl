@@ -87,9 +87,11 @@ function gillespie_step(s::Stoichiometry, state::Array{Int32, 1}, θ::Array{Floa
 end
 
 ##Perform a simulation of the Gillespie algorithm
-##with stoichiometry "s", initial state "state0" and constants "θ"
-##A matrix is returned with entry [:,i] the state at time obs_times[i] returning state at specified timepoints
-function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Array{Float64, 1}, obs_times::Array{Float64, 1})
+##with stoichiometry "s", initial state "state0" and constants "θ", observation times "obs_times", maximum iterations to perform maxit
+##A tuple (success, observations) is returned
+##success is true if all the observation times were reached in the specified number of iterations
+##observations is a matrix with entry [:,i] the state at time obs_times[i] (if success=false, unobserved entries are zero)
+function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Array{Float64, 1}, obs_times::Array{Float64, 1}, maxit::Integer)
     if (length(state0) != s.nspecies)
         error("Number of species given in initial state and stoichiometry do not match")
     elseif (length(θ) != s.nreactions)
@@ -102,7 +104,7 @@ function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Ar
         error("obs_times must be non-negative")
     end
     nobs = length(obs_times)
-    observations = Array(Int32, (s.nspecies, nobs))
+    observations = zeros(Int32, (s.nspecies, nobs))
     obs_count = 1 ##Which observation we are currently looking for
     if (obs_times[1] == 0)
         observations[:,1] = state0
@@ -110,14 +112,18 @@ function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Ar
     end
     t_curr = 0.0
     state_curr = copy(state0)
-    t_next = obs_times[obs_count]    
-    while (true)
+    t_next = obs_times[obs_count]
+    it_count = 0
+    success = false
+    while (it_count < maxit)
         (Δt, event) = gillespie_step(s, state_curr, θ)
+        it_count += 1
         if (Δt > t_next - t_curr)
             observations[:,obs_count] = state_curr
             t_curr = t_next
             obs_count += 1
             if (obs_count > nobs)
+                success = true
                 break
             else
                 t_next = obs_times[obs_count]
@@ -127,7 +133,7 @@ function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Ar
             t_curr += Δt
         end
     end
-    observations
+    (success, observations)
 end
 
 ##Perform a simulation of the Gillespie algorithm
