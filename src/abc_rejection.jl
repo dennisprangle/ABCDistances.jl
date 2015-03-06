@@ -12,9 +12,9 @@ function abcRejection(in::ABCInput, nsims::Integer)
         parameters[:,i] = pars
         sumstats[:,i] = in.sample_sumstats(pars)
     end
-    newnorm = init(in.abcnorm, sumstats)
-    distances = [evalnorm(newnorm, abs(in.sobs-sumstats[:,i])) for i=1:nsims]
-    out = ABCRejOutput(in.nparameters, in.nsumstats, nsims, parameters, sumstats, distances, ones(nsims), newnorm)
+    newdist = init(in.abcdist, sumstats)
+    distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsims]
+    out = ABCRejOutput(in.nparameters, in.nsumstats, nsims, parameters, sumstats, distances, ones(nsims), newdist)
     sortABCOutput!(out)
     out
 end

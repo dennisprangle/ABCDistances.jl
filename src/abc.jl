@@ -11,8 +11,8 @@ type ABCInput
     rprior::Function
     dprior::Function
     sample_sumstats::Function
-    abcnorm::ABCNorm
-    sobs::Array{Float64, 1}
+    abcdist::ABCDistance
+    sobs::Array{Float64, 1} ##TO DO: this is now part of abcdist so no need for it to be here any more
     nparameters::Int32
     nsumstats::Int32    
 end
@@ -29,7 +29,7 @@ type ABCRejOutput <: ABCOutput
     sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
     distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim
     weights::Array{Float64, 1}    ##weights[i] is weight for ith accepted sim
-    abcnorm::ABCNorm
+    abcdist::ABCDistance
 end
 
 ##ABC SMC output
@@ -43,7 +43,7 @@ type ABCSMCOutput <: ABCOutput
     sumstats::Array{Float64, 3}   ##sumstats[i,j,k] is ith sumstat for jth accepted sim in iteration k
     distances::Array{Float64, 2}  ##distances[i,j] is distance for ith accepted sim in iteration j
     weights::Array{Float64, 2}    ##weights[i,j] is weight for ith accepted sim in iteration j
-    abcnorms::Array{ABCNorm, 1}    ##abcnorm[i] is norm used in iteration i
+    abcdists::Array{ABCDistance, 1}    ##abcdist[i] is distance used in iteration i
     thresholds::Array{Float64, 1}  ##threshold[i] is threshold used in iteration i
 end
 
@@ -58,7 +58,7 @@ function ABCInput()
     ABCInput(()->rand(1),  ##rprior U(0,1) prior on 1 parameter
              (x)->1.0,      ##dprior is improper uniform prior
              (x)->rand(1), ##sample_sumstats draws from U(0,1) independent of parameters
-             Euclidean(),  ##abcnorm
+             Euclidean([1.0]),  ##abcdist
              [1.0],         ##sobs
              1,             ##nparameters
              1)             ##nsumstats
@@ -90,7 +90,7 @@ function show(io::IO, out::ABCRejOutput)
 end
 
 function copy(out::ABCRejOutput)
-    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcnorm)
+    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcdist)
 end
 
 ##Sort output into distance order
