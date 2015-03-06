@@ -45,10 +45,27 @@ function MahalanobisDiag()
     MahalanobisDiag([])
 end
 
-function init(x::MahalanobisDiag, sumstats::Array)
-    sdev = squeeze(std(sumstats, 2), 2)
+##Handles initialisation in case where some summary statistics should be ignored
+function init_inf(x::MahalanobisDiag, sumstats::Array)
+    todrop = vec(isinf(sumstats[1,:]))
+    if (all(todrop))
+        sdev = fill(1, size(sumstats)[1])
+    else
+        s = sumstats[:,!todrop]
+        sdev = vec(std(s, 2))
+    end
     MahalanobisDiag(1.0./sdev)
 end
+
+function init(x::MahalanobisDiag, sumstats::Array)
+    if (any(isinf(sumstats)))
+        return init_inf(x, sumstats)
+    else
+        sdev = vec(std(s, 2))
+        return MahalanobisDiag(1.0./sdev)
+    end
+end
+
 
 function evalnorm(x::MahalanobisDiag, absdiff::Array)
     norm(absdiff .* x.w, 2.0)
@@ -63,9 +80,25 @@ function MahalanobisEmp()
     MahalanobisEmp(eye(1))
 end
 
-function init(x::MahalanobisEmp, sumstats::Array)
-    Ω = inv(cov(sumstats, vardim=2)) ##Need to deal with case where empirical covariance not invertible
+##Handles initialisation in case where some summary statistics should be ignored
+function init_inf(x::MahalanobisEmp, sumstats::Array)
+    todrop = vec(isinf(sumstats[1,:]))
+    if (all(todrop))
+        Ω = eye(size(sumstats)[1])
+    else
+        s = sumstats[:,!todrop]
+        Ω = inv(cov(s, vardim=2))
+    end
     MahalanobisEmp(Ω)
+end
+
+function init(x::MahalanobisEmp, sumstats::Array)
+    if (any(isinf(sumstats)))
+        return init_inf(x, sumstats)
+    else
+        Ω = inv(cov(sumstats, vardim=2)) ##Need to deal with case where empirical covariance not invertible
+        return MahalanobisEmp(Ω)
+    end
 end
 
 function evalnorm(x::MahalanobisEmp, absdiff::Array)
