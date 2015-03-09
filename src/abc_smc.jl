@@ -8,6 +8,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
     curroutput = abcRejection(abcinput, N, k)
     itsdone = 1
     print("Iteration $itsdone, $N sims done\n")
+    @printf("Acceptance rate %.1e percent\n", 100*k/N)
     print("Output of most recent stage:\n")
     print(curroutput)
     ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
@@ -27,10 +28,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newparameters = Array(Float64, (abcinput.nparameters, N))
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newpriorweights = Array(Float64, N)
+        simsdone_thisiteration = 0
         if (adaptive)
             ##Initialise storage of all simulated summaries for use updating the distance function
             allsumstats = Array(Float64, (abcinput.nsumstats, nsims_for_init))
-            simsdone_thisiteration = 0
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -45,8 +46,8 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             ##Draw summaries
             propstats = abcinput.sample_sumstats(proppars)
             simsdone += 1
-            if (adaptive && simsdone_thisiteration < nsims_for_init)
-                simsdone_thisiteration += 1
+            simsdone_thisiteration += 1
+            if (adaptive && simsdone_thisiteration <= nsims_for_init)
                 allsumstats[:,simsdone_thisiteration] = propstats
             end
             if (adaptive)
@@ -96,6 +97,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         push!(rejOutputs, curroutput)
         ##Report status
         print("Iteration $itsdone, $simsdone sims done\n")
+        @printf("Acceptance rate %.1e percent\n", 100*k/simsdone_thisiteration)
         print("Output of most recent stage:\n")
         print(curroutput)
         ##Make some plots as well?
