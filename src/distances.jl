@@ -128,6 +128,7 @@ function MahalanobisNP(sobs::Array{Float64, 1})
 end
 
 function init(x::MahalanobisNP, sumstats::Array{Float64, 2})
+    ##TO DO: drop infinite values (but what if none left?)
     Sin = hcat(sumstats, x.sobs) ##Include the observations as well
     (nstats, nsims) = size(Sin)
     Sout = zeros(nsims, nstats)
@@ -147,6 +148,7 @@ function evaldist(x::MahalanobisNP, s::Array{Float64, 1})
 end
 
 ##Piece-wise linear cdf estimate for x from sorted data a
+##TO DO: cope with repeated values in a
 function pw_cdf(a::Array{Float64, 1}, x::Float64)
     n = length(a)
     i = searchsortedfirst(a, x)
