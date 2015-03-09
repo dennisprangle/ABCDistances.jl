@@ -124,8 +124,8 @@ function propgood(s::Array{Float64, 1}, dist::ABCDistance, threshold::Float64)
 end
 
 ##Check if summary statistics meet all of previous acceptance requirements
-function propgood(s::Array{Float64, 1}, dists::Array, thresholds::Array{Float64, 1})
-    for i in 1:length(dists)
+function propgood(s::Array{Float64, 1}, dists::Array{ABCDistance, 1}, thresholds::Array{Float64, 1})
+    for i in [length(dists):-1:1] ##Check the most stringent case first
         if !propgood(s, dists[i], thresholds[i])
             return false
         end
