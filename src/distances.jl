@@ -120,8 +120,8 @@ function init(x::RankDist, sumstats::Array{Float64, 2})
     acceptable = fill(true, nsims)
     init(x, sumstats, acceptable)
 end
-    
-function init(x::RankDist, sumstats::Array{Float64, 2}, acceptable::Array{Float64, 1})
+
+function init(x::RankDist, sumstats::Array{Float64, 2}, acceptable::Array{Bool, 1})
     (nstats, nsims) = size(sumstats)
     if (x.N >= sum(acceptable))
         s_min = fill(-Inf, nstats)
@@ -129,7 +129,7 @@ function init(x::RankDist, sumstats::Array{Float64, 2}, acceptable::Array{Float6
     else
         ##marg_rank_dist is marginal signed rank distances of simulations to sobs
         s = hcat(sumstats, x.sobs) 
-        marg_rank_dist = Array(Int32, sumstats)
+        marg_rank_dist = Array(Int32, (nstats, nsims))
         for i in 1:nstats
             rank = ordinalrank(vec(s[i,:]))
             marg_rank_dist[i,:] = rank[1:nsims] - rank[nsims+1]

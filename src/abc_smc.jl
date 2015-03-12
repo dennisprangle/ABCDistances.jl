@@ -81,7 +81,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if (adaptive)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
-                acceptable = acceptable[:,1:successes_thisit]
+                acceptable = acceptable[1:successes_thisit]
             end
             newdist = init(abcinput.abcdist, sumstats_forinit, acceptable)
         else
