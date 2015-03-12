@@ -32,6 +32,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if (adaptive)
             ##Initialise storage of all simulated summaries for use initialising the distance function
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
+            acceptable = Array(Bool, nsims_for_init)
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -50,13 +51,14 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 ##If rejection occurred during simulation
                 continue
             end
-            if (adaptive && simsdone_forinit <= nsims_for_init)
+            if (adaptive && successes_thisit < nsims_for_init)
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
             end
             if (adaptive)
                 ##Accept if all prev distances less than corresponding thresholds.
                 accept = propgood(propstats, dists, thresholds)
+                acceptable[successes_thisit] = accept
             else
                 ##Accept if distance less than current threshold
                 accept = propgood(propstats, dists[itsdone], thresholds[itsdone])
@@ -79,8 +81,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if (adaptive)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
+                acceptable = acceptable[:,1:successes_thisit]
             end
-            newdist = init(abcinput.abcdist, sumstats_forinit)
+            newdist = init(abcinput.abcdist, sumstats_forinit, acceptable)
         else
             newdist = dists[1]
         end

@@ -12,9 +12,14 @@ abstract ABCDistance
 #################################
 ##Subtypes and methods of ABCDistance
 #################################
-function init(x::ABCDistance, sumstats::Array)
+function init(x::ABCDistance, sumstats::Array{Float64, 2})
     ##Default is to return original distance as no initialisation required
     x
+end
+
+function init(x::ABCDistance, sumstats::Array{Float64, 2}, acceptable::Array{Bool, 1})
+    ##Default is to ignore "acceptable" argument
+    init(x, sumstats)
 end
 
 type Lp <: ABCDistance
@@ -95,56 +100,74 @@ function evaldist(x::MahalanobisEmp, s::Array{Float64, 1})
     (absdiff' * x.Ω * absdiff)[1]
 end
 
-type MahalanobisNP <: ABCDistance
+type RankDist <: ABCDistance    
     sobs::Array{Float64, 1} ##Observed summaries
-    zobs::Array{Float64, 1} ##Observed summaries transformed to normal variates
-    sumstats::Array{Float64, 2} ##Sorted summaries sampled via importance dist. sumstats[i,j] is ith largest value for summary j.
+    N::Int32 ##How many particles to use
+    s_min::Array{Float64, 1} ##Smallest acceptable value of s
+    s_max::Array{Float64, 1} ##Largest acceptable value of s
 end
 
-function MahalanobisNP(sobs::Array{Float64, 1})
-    MahalanobisNP(sobs, [0.5], eye(1))
+function RankDist(sobs::Array{Float64, 1}, N::Int32)
+    nstats = length(sobs)
+    s_min = fill(-Inf, nstats)
+    s_max = fill(Inf, nstats)
+    RankDist(sobs, N, s_min, s_max)
 end
 
-function init(x::MahalanobisNP, sumstats::Array{Float64, 2})
-    ##TO DO: drop infinite values (but what if none left?)
-    Sin = hcat(sumstats, x.sobs) ##Include the observations as well
-    (nstats, nsims) = size(Sin)
-    Sout = zeros(nsims, nstats)
-    for i in 1:nstats
-        Sout[:,i] = sort(vec(Sin[i,:]))
-    end
-    zobs = [pw_cdf(Sout[:,i], x.sobs[i]) for i in 1:nstats]
-    zobs = quantile(Normal(), zobs)
-    MahalanobisNP(x.sobs, zobs, Sout)
+function init(x::RankDist, sumstats::Array{Float64, 2})
+    ##Default is that all simulations are acceptable
+    (nstats, nsims) = size(sumstats)    
+    acceptable = fill(true, nsims)
+    init(x, sumstats, acceptable)
 end
-
-function evaldist(x::MahalanobisNP, s::Array{Float64, 1})
-    z = [pw_cdf(x.sumstats[:,i], s[i]) for i in 1:length(s)]
-    z = quantile(Normal(), z)
-    absdiff = abs(x.zobs - z)
-    norm(absdiff, 2.0)
-end
-
-##Piece-wise linear cdf estimate for x from sorted data a
-##TO DO: cope with repeated values in a
-function pw_cdf(a::Array{Float64, 1}, x::Float64)
-    n = length(a)
-    i = searchsortedfirst(a, x)
-    ##(al, ar) are values used for interpolation
-    ##(cl, cr) are cdf values at these points
-    if (i==1)
-        al = a[1]
-        ar = a[2]
-        (cl, cr) = [1,2]/(n+1)
-    elseif (i==n+1)
-        al = a[n-1]
-        ar = a[n]
-        (cl, cr) = [n-1,n]/(n+1)
+    
+function init(x::RankDist, sumstats::Array{Float64, 2}, acceptable::Array{Float64, 1})
+    (nstats, nsims) = size(sumstats)
+    if (x.N >= sum(acceptable))
+        s_min = fill(-Inf, nstats)
+        s_max = fill(Inf, nstats)
     else
-        al = a[i-1]
-        ar = a[i]
-        (cl, cr) = [i-1,i]/(n+1)
+        ##marg_rank_dist is marginal signed rank distances of simulations to sobs
+        s = hcat(sumstats, x.sobs) 
+        marg_rank_dist = Array(Int32, sumstats)
+        for i in 1:nstats
+            rank = ordinalrank(vec(s[i,:]))
+            marg_rank_dist[i,:] = rank[1:nsims] - rank[nsims+1]
+        end
+        ##max_rank_dist is an absolute rank distance of simulations to sobs
+        ##It's set to Inf for simulations rejected under earlier distances
+        max_rank_dist = fill(Inf, nsims)
+        max_rank_dist[acceptable] = vec(maximum(abs(marg_rank_dist[:, acceptable]), 1))
+        toaccept = sortperm(max_rank_dist)[1:x.N]
+        sacc = sumstats[:,toaccept]
+        ##Find narrowest boundaries allowing x.N acceptances (plus any ties)
+        s_min = vec(minimum(sacc, 2))
+        s_max = vec(maximum(sacc, 2))
+        ##Expand to get widest boundaries allowing x.N acceptances (plus any ties)
+        ##TO DO: Not sure this code is very efficient!
+        for i in 1:nstats
+            z = [vec(sumstats[i, :]), -Inf, Inf]
+            s_min[i] = maximum(z[z.<s_min[i]])
+            s_max[i] = minimum(z[z.>s_max[i]])
+        end
+        ##DEBUGGING!
+        inbounds = 0
+        for i in 1:nsims
+            if (all(sumstats[:,i] .> s_min) & all(sumstats[:,i] .< s_max))
+                inbounds += 1
+            end
+        end
+        print("$inbounds sims are within the bounds\n")
     end
-    y = cl + (cr-cl)*(x-al)/(ar-al)
-    max(0.0, min(y,1.0))    
+    RankDist(x.sobs, x.N, s_min, s_max)
+end
+    
+function evaldist(x::RankDist, s::Array{Float64, 1})
+    dist = 0.0 ##acceptance
+    if (any(s .<= x.s_min))
+        dist = 1.0 ##rejection
+    elseif (any(s .>= x.s_max))
+        dist = 1.0 ##rejection
+    end
+    return dist
 end
