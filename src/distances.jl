@@ -55,25 +55,14 @@ function MahalanobisDiag(sobs::Array{Float64, 1})
     MahalanobisDiag(sobs, [])
 end
 
-##Handles initialisation in case where some summary statistics should be ignored
-function init_inf(x::MahalanobisDiag, sumstats::Array{Float64, 2})
-    todrop = vec(isinf(sumstats[1,:]))
-    if (all(todrop))
-        sdev = fill(1, size(sumstats)[1])
-    else
-        s = sumstats[:,!todrop]
-        sdev = vec(std(s, 2))
-    end
-    MahalanobisDiag(x.sobs, 1.0./sdev)
-end
-
 function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
-    if (any(isinf(sumstats)))
-        return init_inf(x, sumstats)
+    (nstats, nsims) = size(sumstats)
+    if (nsims == 0)
+        sdev = ones(nstats)
     else
         sdev = vec(std(sumstats, 2))
-        return MahalanobisDiag(x.sobs, 1.0./sdev)
     end
+    return MahalanobisDiag(x.sobs, 1.0./sdev)
 end
 
 function evaldist(x::MahalanobisDiag, s::Array{Float64, 1})
@@ -91,25 +80,14 @@ function MahalanobisEmp(sobs::Array{Float64, 1})
     MahalanobisEmp(sobs, eye(1))
 end
 
-##Handles initialisation in case where some summary statistics should be ignored
-function init_inf(x::MahalanobisEmp, sumstats::Array{Float64, 2})
-    todrop = vec(isinf(sumstats[1,:]))
-    if (all(todrop))
-        Ω = eye(size(sumstats)[1])
-    else
-        s = sumstats[:,!todrop]
-        Ω = inv(cov(s, vardim=2))
-    end
-    MahalanobisEmp(x.sobs, Ω)
-end
-
 function init(x::MahalanobisEmp, sumstats::Array{Float64, 2})
-    if (any(isinf(sumstats)))
-        return init_inf(x, sumstats)
+    (nstats, nsims) = size(sumstats)
+    if (nsims == 0)
+        Ω = eye(nstats)
     else
-        Ω = inv(cov(sumstats, vardim=2)) ##Need to deal with case where empirical covariance not invertible
-        return MahalanobisEmp(x.sobs, Ω)
+        Ω = inv(cov(sumstats, vardim=2)) ##TO DO: need to deal with case where empirical covariance not invertible
     end
+    return MahalanobisEmp(x.sobs, Ω)
 end
 
 function evaldist(x::MahalanobisEmp, s::Array{Float64, 1})
