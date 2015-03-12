@@ -24,7 +24,8 @@ abstract ABCOutput
 type ABCRejOutput <: ABCOutput
     nparameters::Int32
     nsumstats::Int32 
-    nsims::Int32
+    nsims::Int32                  ##Number of simulations performed
+    nsuccesses::Int32             ##Number of successful simulations, excluding early rejections. Usually equal to nsims.
     parameters::Array{Float64, 2} ##parameters[i,j] is ith parameter for jth accepted sim
     sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
     distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim
@@ -90,7 +91,7 @@ function show(io::IO, out::ABCRejOutput)
 end
 
 function copy(out::ABCRejOutput)
-    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.parameters, out.sumstats, out.distances, out.weights, out.abcdist)
+    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.nsuccesses, out.parameters, out.sumstats, out.distances, out.weights, out.abcdist)
 end
 
 ##Sort output into distance order

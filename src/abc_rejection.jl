@@ -6,15 +6,23 @@
 ##i.e. do simulations, calculate distances and sort into distance order
 function abcRejection(in::ABCInput, nsims::Integer)
     parameters = Array(Float64, (in.nparameters,nsims))
-    sumstats = Array(Float64, (in.nsumstats, nsims))
+    sumstats = zeros(Float64, (in.nsumstats, nsims))
+    successes = Array(Bool, (nsims))
     for i in 1:nsims
         pars = in.rprior()
         parameters[:,i] = pars
-        sumstats[:,i] = in.sample_sumstats(pars)
+        (success, stats) = in.sample_sumstats(pars)
+        successes[i] = success
+        if (success)
+            sumstats[:,i] = stats
+        end
     end
+    nsuccesses = sum(successes)
+    parameters = parameters[:, successes]
+    sumstats = sumstats[:, successes]
     newdist = init(in.abcdist, sumstats)
-    distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsims]
-    out = ABCRejOutput(in.nparameters, in.nsumstats, nsims, parameters, sumstats, distances, ones(nsims), newdist)
+    distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
+    out = ABCRejOutput(in.nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist)
     sortABCOutput!(out)
     out
 end
@@ -33,7 +41,7 @@ end
 function abcRejection(in::ABCInput, nsims::Integer, h::FloatingPoint)
     out = abcRejection(in, nsims)
     if (out.distances[nsims] <= h)
-        k = nsims
+        k = out.nsuccesses
     else
         k = findfirst((x)->x>h, out.distances) - 1
     end

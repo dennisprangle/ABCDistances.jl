@@ -28,10 +28,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newparameters = Array(Float64, (abcinput.nparameters, N))
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newpriorweights = Array(Float64, N)
-        simsdone_thisiteration = 0
+        successes_thisit = 0
         if (adaptive)
-            ##Initialise storage of all simulated summaries for use updating the distance function
-            allsumstats = Array(Float64, (abcinput.nsumstats, nsims_for_init))
+            ##Initialise storage of all simulated summaries for use initialising the distance function
+            sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -44,11 +44,15 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 continue
             end           
             ##Draw summaries
-            propstats = abcinput.sample_sumstats(proppars)
+            (success, propstats) = abcinput.sample_sumstats(proppars)
             simsdone += 1
-            simsdone_thisiteration += 1
-            if (adaptive && simsdone_thisiteration <= nsims_for_init)
-                allsumstats[:,simsdone_thisiteration] = propstats
+            if (!success)
+                ##If rejection occurred during simulation
+                continue
+            end
+            if (adaptive && simsdone_forinit <= nsims_for_init)
+                successes_thisit += 1
+                sumstats_forinit[:,successes_thisit] = propstats
             end
             if (adaptive)
                 ##Accept if all prev distances less than corresponding thresholds.
@@ -73,10 +77,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         push!(cusims, simsdone)
         ##Create new distance if needed
         if (adaptive)
-            if (simsdone_thisiteration < nsims_for_init)
-                allsumstats = allsumstats[:,1:simsdone_thisiteration]
+            if (successes_thisit < nsims_for_init)
+                sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
             end
-            newdist = init(abcinput.abcdist, allsumstats)
+            newdist = init(abcinput.abcdist, sumstats_forinit)
         else
             newdist = dists[1]
         end
@@ -84,7 +88,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Calculate distances
         distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
         oldoutput = copy(curroutput)
-        curroutput = ABCRejOutput(abcinput.nparameters, abcinput.nsumstats, N, newparameters, newsumstats, distances, zeros(N), newdist) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(abcinput.nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -97,7 +101,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         push!(rejOutputs, curroutput)
         ##Report status
         print("Iteration $itsdone, $simsdone sims done\n")
-        @printf("Acceptance rate %.1e percent\n", 100*k/simsdone_thisiteration)
+        @printf("Acceptance rate %.1e percent\n", 100*k/(cusims[itsdone]-cusims[itsdone-1]))
         print("Output of most recent stage:\n")
         print(curroutput)
         ##Make some plots as well?
