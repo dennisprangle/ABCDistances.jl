@@ -84,6 +84,8 @@ function show(io::IO, out::ABCRejOutput)
         end
     end
     print("ABC output, $k accepted values from $(out.nsims) simulations\n")
+    ess = sum(out.weights)^2 / sum(out.weights.^2)
+    print("Effective sample size $(round(ess,1))\n")
     print("Means and rough 95% credible intervals:\n")
     for (i in 1:p)
         @printf("Parameter %d: %.2e (%.2e,%.2e)\n", i, means[i], CI_lower[i], CI_upper[i])
