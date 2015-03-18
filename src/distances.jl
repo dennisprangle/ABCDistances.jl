@@ -65,7 +65,7 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
     if (nsims == 0)
         sdev = ones(nstats)
     else
-        sdev = [MAD(vec(sumstats[i,:])) for i in 1:3]
+        sdev = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
     end
     return MahalanobisDiag(x.sobs, 1.0./sdev)
 end
