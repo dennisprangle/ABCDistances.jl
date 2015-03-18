@@ -17,11 +17,6 @@ function init(x::ABCDistance, sumstats::Array{Float64, 2})
     x
 end
 
-function init(x::ABCDistance, sumstats::Array{Float64, 2}, acceptable::Array{Int32, 1})
-    ##Default is to ignore "acceptable" argument
-    init(x, sumstats)
-end
-
 type Lp <: ABCDistance
     sobs::Array{Float64,1}
     p::Float64
