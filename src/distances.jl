@@ -65,9 +65,14 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
     if (nsims == 0)
         sdev = ones(nstats)
     else
-        sdev = vec(std(sumstats, 2))
+        sdev = [MAD(vec(sumstats[i,:])) for i in 1:3]
     end
     return MahalanobisDiag(x.sobs, 1.0./sdev)
+end
+
+##Median absolute deviation
+function MAD(x::Array{Float64, 1})
+    median(abs(x - median(x)))
 end
 
 function evaldist(x::MahalanobisDiag, s::Array{Float64, 1})
