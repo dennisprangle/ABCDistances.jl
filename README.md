@@ -80,5 +80,22 @@ The third is how simulations to accept at each iteration.
 The last argument is how many simulations to perform in total - the algorithm terminates once this is reached.
 
 ```
-abcSMC(abcinput, 2000, 200, 100000);
+out = abcSMC(abcinput, 2000, 200, 100000);
 ```
+
+The following command instead uses an adaptive distance function (an ongoing research project).
+
+```
+out_adapt = abcSMC(abcinput, 2000, 200, 100000; adaptive=true);
+```
+
+Marginal estimates of parameter mean and variances can be calculated from ABC SMC output as follows.
+Note that in this example the last 2 parameters are more accurately estimated by the adaptive method.
+
+```
+parameter_means(out)
+parameter_means(out_adapt)
+parameter_vars(out)
+parameter_vars(out_adapt)
+```
+
