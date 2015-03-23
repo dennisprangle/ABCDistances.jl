@@ -69,7 +69,7 @@ The first command (3rd argument is an integer) returns the 200 best fitting simu
 
 The second command (3rd argument is floating point) returns all simulations with distance below the threshold specified.
 
-```
+```julia
 abcRejection(abcinput, 10000, 200)
 abcRejection(abcinput, 10000, 0.3)
 ```
