@@ -30,12 +30,15 @@ quantiles = [1000,2000,3000,4000,5000,6000,7000,8000,9000]
 ndataset = 10000
 ##Simulate from the model and return summary statistics
 function sample_sumstats(pars::Array{Float64,1})
-    rgk_os(pars, quantiles, ndataset)
+    success = true
+    stats = rgk_os(pars, quantiles, ndataset)
+    (success, stats)
 end
 
 ##Generate the observed summary statistics
 theta0 = [3.0,1.0,1.5,0.5]
-sobs = sample_sumstats(theta0)
+srand(1)
+(success, sobs) = sample_sumstats(theta0)
 ```
 
 Next an `ABCInput` type is created and populated using the above.
@@ -46,7 +49,7 @@ Note `abcnorm` must be a subtype of `ABCNorm`. Several options are defined in `n
 abcinput = ABCInput()
 abcinput.rprior = rprior
 abcinput.sample_sumstats = sample_sumstats
-abcinput.abcnorm = MahalanobisDiag()
+abcinput.abcdist = MahalanobisDiag(sobs)
 abcinput.sobs = sobs
 abcinput.nparameters = 4
 abcinput.nsumstats = 9
@@ -70,5 +73,5 @@ The third is how simulations to accept at each iteration.
 The last argument is how many simulations to perform in total - the algorithm terminates once this is reached.
 
 ```
-abcSMC(abcinput, 2000, 200, 1000000);
+abcSMC(abcinput, 2000, 200, 100000);
 ```
