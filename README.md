@@ -54,7 +54,7 @@ Next an `ABCInput` type is created and populated using the above.
 
 Note `abcdist` must be a subtype of `ABCDistance`. Several options are defined in `distances.jl`.
 
-```
+```julia
 abcinput = ABCInput();
 abcinput.prior = GKPrior();
 abcinput.sample_sumstats = sample_sumstats;
@@ -79,20 +79,20 @@ The second argument is how many simulations to produce at each iteration which a
 The third is how simulations to accept at each iteration.
 The last argument is how many simulations to perform in total - the algorithm terminates once this is reached.
 
-```
+```julia
 out = abcSMC(abcinput, 2000, 200, 100000);
 ```
 
 The following command instead uses an adaptive distance function (an ongoing research project).
 
-```
+```julia
 out_adapt = abcSMC(abcinput, 2000, 200, 100000; adaptive=true);
 ```
 
 Marginal estimates of parameter mean and variances can be calculated from ABC SMC output as follows.
 Note that in this example the last 2 parameters are more accurately estimated by the adaptive method.
 
-```
+```julia
 parameter_means(out)
 parameter_means(out_adapt)
 parameter_vars(out)
