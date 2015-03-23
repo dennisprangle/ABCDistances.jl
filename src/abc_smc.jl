@@ -4,6 +4,7 @@
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
+    nparameters = length(abcinput.prior)
     ##First iteration is just standard rejection sampling
     curroutput = abcRejection(abcinput, N, k)
     itsdone = 1
@@ -25,7 +26,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         currvar = cov(curroutput.parameters, WeightVec(curroutput.weights), vardim=2)
         perturbdist = MvNormal(2.0 .* currvar)
         ##Initialise new reference table
-        newparameters = Array(Float64, (abcinput.nparameters, N))
+        newparameters = Array(Float64, (nparameters, N))
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newpriorweights = Array(Float64, N)
         successes_thisit = 0
@@ -39,10 +40,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             ##Sample parameters from importance density
             proppars = rimportance(curroutput, perturbdist)
             ##Calculate prior weight and reject if zero
-            priorweight = abcinput.dprior(proppars)
+            priorweight = pdf(abcinput.prior, proppars)
             if (priorweight == 0.0)
                 continue
-            end           
+            end          
             ##Draw summaries
             (success, propstats) = abcinput.sample_sumstats(proppars)
             simsdone += 1
@@ -88,7 +89,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Calculate distances
         distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
         oldoutput = copy(curroutput)
-        curroutput = ABCRejOutput(abcinput.nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -109,7 +110,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
     end
         
     ##Put results into ABCSMCOutput object
-    parameters = Array(Float64, (abcinput.nparameters, k, itsdone))
+    parameters = Array(Float64, (nparameters, k, itsdone))
     sumstats = Array(Float64, (abcinput.nsumstats, k, itsdone))
     distances = Array(Float64, (k, itsdone))
     weights = Array(Float64, (k, itsdone))
@@ -119,7 +120,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         distances[:,i] = rejOutputs[i].distances
         weights[:,i] = rejOutputs[i].weights
     end
-    output = ABCSMCOutput(abcinput.nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds)
+    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds)
 end
 
 ##Check if summary statistics meet acceptance requirement

@@ -6,26 +6,10 @@ Work in progress!
 
 ## Example
 
-First some code to set up the particular problem of interest. This is for infering the parameters of the g-and-k distribution. Some code for this distribution is included in the package.
+The first code set up the particular model and summary statistics of interest. Here the model is the g-and-k distribution and the summary statistics are particular order statistics. Some code for this distribution is included in the package.
 
 ```julia
 using ABCDistances
-
-##Sample from the prior
-function rprior()
-    10.0*rand(4)
-end
-
-##Evaluate the prior density
-function dprior(pars::Array) ##Independent uniform priors on [0,10]
-    if (any(pars.<0.0))
-        return 0.0
-    elseif (any(pars.>10.0))
-        return 0.0
-    end
-    return 1.0
-end
-
 quantiles = [1000,2000,3000,4000,5000,6000,7000,8000,9000]
 ndataset = 10000
 ##Simulate from the model and return summary statistics
@@ -41,19 +25,42 @@ srand(1)
 (success, sobs) = sample_sumstats(theta0)
 ```
 
+Next the prior distribution is specified. This is simply 4 independent Uniform(0,10) random variables.
+```julia
+using Distributions
+import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
+
+type GKPrior <: ContinuousMultivariateDistribution
+end
+
+function length(d::GKPrior)
+    4
+end
+
+function _rand!{T<:Real}(d::GKPrior, x::AbstractVector{T})
+    x = 10.0*rand(4)
+end
+
+function _pdf{T<:Real}(d::GKPrior, x::AbstractVector{T})
+    if (all(0.0 .<= x .<= 10.0))
+        return 0.0001
+    else
+        return 0.0
+    end
+end
+```
+
 Next an `ABCInput` type is created and populated using the above.
 
-Note `abcnorm` must be a subtype of `ABCNorm`. Several options are defined in `norms.jl`.
+Note `abcdist` must be a subtype of `ABCDistance`. Several options are defined in `distances.jl`.
 
 ```
-abcinput = ABCInput()
-abcinput.rprior = rprior
-abcinput.sample_sumstats = sample_sumstats
-abcinput.abcdist = MahalanobisDiag(sobs)
-abcinput.sobs = sobs
-abcinput.nparameters = 4
-abcinput.nsumstats = 9
-abcinput.dprior = dprior
+abcinput = ABCInput();
+abcinput.prior = GKPrior();
+abcinput.sample_sumstats = sample_sumstats;
+abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.sobs = sobs;
+abcinput.nsumstats = 9;
 ```
 
 Now an ABC algorithm can be run. The following commands run an ABC rejection algorithm. The 2nd argument is the number of iterations to perform.

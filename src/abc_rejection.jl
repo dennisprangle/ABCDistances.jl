@@ -5,11 +5,12 @@
 ##Do abcRejection calculations but accept everything
 ##i.e. do simulations, calculate distances and sort into distance order
 function abcRejection(in::ABCInput, nsims::Integer)
-    parameters = Array(Float64, (in.nparameters,nsims))
+    nparameters = length(in.prior)
+    parameters = Array(Float64, (nparameters, nsims))
     sumstats = zeros(Float64, (in.nsumstats, nsims))
     successes = Array(Bool, (nsims))
     for i in 1:nsims
-        pars = in.rprior()
+        pars = rand(in.prior)
         parameters[:,i] = pars
         (success, stats) = in.sample_sumstats(pars)
         successes[i] = success
@@ -22,7 +23,7 @@ function abcRejection(in::ABCInput, nsims::Integer)
     sumstats = sumstats[:, successes]
     newdist = init(in.abcdist, sumstats)
     distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
-    out = ABCRejOutput(in.nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist)
+    out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist)
     sortABCOutput!(out)
     out
 end

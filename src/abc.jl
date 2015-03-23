@@ -8,12 +8,10 @@
 #################
 ##Input for an ABC analysis
 type ABCInput
-    rprior::Function
-    dprior::Function
+    prior::Union(DiscreteMultivariateDistribution, ContinuousMultivariateDistribution)
     sample_sumstats::Function
     abcdist::ABCDistance
     sobs::Array{Float64, 1} ##TO DO: this is now part of abcdist so no need for it to be here any more
-    nparameters::Int32
     nsumstats::Int32    
 end
 
@@ -56,13 +54,11 @@ end
 #################
 ##Semi-sensible defaults
 function ABCInput()
-    ABCInput(()->rand(1),  ##rprior U(0,1) prior on 1 parameter
-             (x)->1.0,      ##dprior is improper uniform prior
-             (x)->rand(1), ##sample_sumstats draws from U(0,1) independent of parameters
+    ABCInput(MvNormal(1, 1.0),  ##prior
+             (x)->rand(1),       ##sample_sumstats draws from U(0,1) independent of parameters
              Euclidean([1.0]),  ##abcdist
-             [1.0],         ##sobs
-             1,             ##nparameters
-             1)             ##nsumstats
+             [1.0],              ##sobs
+             1)                  ##nsumstats
 end
 
 #################
