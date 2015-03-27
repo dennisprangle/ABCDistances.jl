@@ -48,13 +48,11 @@ end
 type MahalanobisDiag <: ABCDistance
     sobs::Array{Float64,1}
     w::Array{Float64,1} ##Weights for each summary statistic - square root of estimated precisions
-    verbose::Bool ##If true the simulated summary statistics are stored as ssim
-    ssim::Array{Float64, 2}
 end
 
-##Only defines sobs and verbose. The rest are calculated by init.
-function MahalanobisDiag(sobs::Array{Float64, 1}, verbose=false)
-    MahalanobisDiag(sobs, [], verbose, zeros((0,0)))
+##Leaves w undefined
+function MahalanobisDiag(sobs::Array{Float64, 1})
+    MahalanobisDiag(sobs, [])
 end
 
 function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
@@ -64,12 +62,7 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
     else
         sdev = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
     end
-    if (x.verbose == true)
-        out = MahalanobisDiag(x.sobs, 1.0./sdev, true, sumstats)
-    else
-        out = MahalanobisDiag(x.sobs, 1.0./sdev, false, zeros((0,0)))
-    end
-    return out
+    return MahalanobisDiag(x.sobs, 1.0./sdev)
 end
 
 ##Median absolute deviation
