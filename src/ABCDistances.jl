@@ -7,7 +7,7 @@ import Base.show, Base.copy
 export
   ABCDistance, Lp, Euclidean, Logdist, MahalanobisDiag, MahalanobisEmp, ##ABCDistance types
   init, evaldist, ##ABCDistance methods
-  ABCInput, RefTable, ABCOutput, ABCRejOutput, ##General ABC types
+  ABCInput, RefTable, ABCOutput, ABCRejOutput, ABCSMCOutput, ##General ABC types
   sortABCOutput!, show, copy, parameter_means, parameter_vars, parameter_covs, ##General ABC methods
   abcRejection, abcSMC, ##ABC algorithms
   rgk, rgk_os, ##g&k methods
