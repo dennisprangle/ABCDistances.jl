@@ -4,7 +4,7 @@
 
 ##Do abcRejection calculations but accept everything
 ##i.e. do simulations, calculate distances and sort into distance order
-function abcRejection(in::ABCInput, nsims::Integer)
+function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     nparameters = length(in.prior)
     parameters = Array(Float64, (nparameters, nsims))
     sumstats = zeros(Float64, (in.nsumstats, nsims))
@@ -23,14 +23,19 @@ function abcRejection(in::ABCInput, nsims::Integer)
     sumstats = sumstats[:, successes]
     newdist = init(in.abcdist, sumstats)
     distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
-    out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist)
+    if (store_init)
+        init_sims = sumstats
+    else
+        init_sims = Array(Float64, (0,0))
+    end
+    out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist, init_sims)
     sortABCOutput!(out)
     out
 end
 
 ##Do abcRejection, accepting k closest matches
-function abcRejection(in::ABCInput, nsims::Integer, k::Integer)
-    out = abcRejection(in, nsims)
+function abcRejection(in::ABCInput, nsims::Integer, k::Integer; store_init=false)
+    out = abcRejection(in, nsims, store_init=store_init)
     out.parameters = out.parameters[:,1:k]
     out.sumstats = out.sumstats[:,1:k]
     out.distances = out.distances[1:k]
@@ -39,8 +44,8 @@ function abcRejection(in::ABCInput, nsims::Integer, k::Integer)
 end
 
 ##Do abcRejection, accepting distances <= h
-function abcRejection(in::ABCInput, nsims::Integer, h::FloatingPoint)
-    out = abcRejection(in, nsims)
+function abcRejection(in::ABCInput, nsims::Integer, h::FloatingPoint; store_init=false)
+    out = abcRejection(in, nsims, store_init=store_init)
     if (out.distances[nsims] <= h)
         k = out.nsuccesses
     else

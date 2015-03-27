@@ -3,10 +3,11 @@
 ##maxsims - the algorithm will stop once this many simulations have been performed
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
-function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false)
+##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
+function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false)
     nparameters = length(abcinput.prior)
     ##First iteration is just standard rejection sampling
-    curroutput = abcRejection(abcinput, N, k)
+    curroutput = abcRejection(abcinput, N, k, store_init=store_init)
     itsdone = 1
     print("Iteration $itsdone, $N sims done\n")
     @printf("Acceptance rate %.1e percent\n", 100*k/N)
@@ -30,7 +31,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newpriorweights = Array(Float64, N)
         successes_thisit = 0
-        if (adaptive)
+        if (adaptive || store_init)
             ##Initialise storage of all simulated summaries for use initialising the distance function
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
         end
@@ -51,7 +52,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 ##If rejection occurred during simulation
                 continue
             end
-            if (adaptive && successes_thisit < nsims_for_init)
+            if ((adaptive || store_init) && successes_thisit < nsims_for_init)
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
             end
@@ -76,20 +77,26 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Update counters
         itsdone += 1
         push!(cusims, simsdone)
-        ##Create new distance if needed
-        if (adaptive)
+        ##Trim sumstats_forinit to correct size
+        if (adaptive || store_init)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
             end
+        else
+            sumstats_forinit = Array(Float64, (0,0))
+        end
+        ##Create new distance if needed
+        if (adaptive)
             newdist = init(abcinput.abcdist, sumstats_forinit)
         else
             newdist = dists[1]
         end
         push!(dists, newdist)
+        
         ##Calculate distances
         distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
         oldoutput = copy(curroutput)
-        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist, sumstats_forinit) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -98,6 +105,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         curroutput.sumstats = curroutput.sumstats[:,1:k]
         curroutput.distances = curroutput.distances[1:k]
         curroutput.weights = getweights(curroutput, newpriorweights, oldoutput, perturbdist)
+            
         ##Record output
         push!(rejOutputs, curroutput)
         ##Report status
@@ -120,7 +128,15 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         distances[:,i] = rejOutputs[i].distances
         weights[:,i] = rejOutputs[i].weights
     end
-    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds)
+    if (store_init)
+        init_sims = Array(Array{Float64, 2}, itsdone)
+        for i in 1:itsdone
+            init_sims[i] = rejOutputs[i].init_sims
+        end
+    else
+        init_sims = Array(Array{Float64, 2}, 0)
+    end
+    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims)
 end
 
 ##Check if summary statistics meet acceptance requirement
