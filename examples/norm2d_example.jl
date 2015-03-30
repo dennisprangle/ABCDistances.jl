@@ -1,6 +1,10 @@
 using ABCDistances
 using Distributions
+using PyPlot
 
+######################################################################
+##EXAMPLE 1: one informative summary statistic
+######################################################################
 ##Set up abcinput
 function sample_sumstats(pars::Array)
     success = true
@@ -8,10 +12,7 @@ function sample_sumstats(pars::Array)
     (success, stats)
 end
 
-##theta0 = [-3.0]
-##srand(1)
-##sobs = sample_sumstats(theta0)[2]
-sobs = [0.0,0.0] ##So we get a nice graph
+sobs = [0.0,0.0]
 
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
@@ -32,7 +33,6 @@ smcoutput1.abcdists[1].w
 ######################################################################
 ##Plot simulations from each importance density and acceptance regions
 ######################################################################
-using PyPlot
 ##Define plotting functions
 function plot_init(out::ABCSMCOutput, i::Int32)
     ssim = out.init_sims[i]
@@ -81,3 +81,99 @@ plot(smcoutput2.cusims[1:nits], RMSE2, "b-o")
 xlabel("Simulations")
 ylabel("RMSE")  
 PyPlot.savefig("normal_RMSE.pdf")
+
+######################################################################
+##EXAMPLE 2: 2nd sum stat has non-constant variance
+######################################################################
+function sample_sumstats(pars::Array)
+    success = true
+    theta = pars[1]
+    stats = [theta + 0.1*randn(1), (1.0+10.0/(1.0+(theta/50.0)^2))*randn(1)]
+    (success, stats)
+end
+
+sobs = [0.0,0.0]
+    
+abcinput = ABCInput();
+abcinput.prior = MvNormal(1, 100.0);
+abcinput.sample_sumstats = sample_sumstats;
+abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.sobs = sobs;
+abcinput.nsumstats = 2;
+
+##Perform ABC-SMC
+srand(20)
+smcoutput3 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
+smcoutput4 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+
+nits = min(smcoutput3.niterations, smcoutput4.niterations)
+PyPlot.figure()
+PyPlot.subplot(221)
+for i in 1:nits
+    plot_init(smcoutput3, i)
+end
+PyPlot.subplot(222)
+for i in 1:nits
+    plot_init(smcoutput4, i)
+end 
+PyPlot.subplot(223)
+for i in 1:nits
+    plot_acc(smcoutput3, i)
+end
+PyPlot.subplot(224)
+for i in 1:nits
+    plot_acc(smcoutput4, i)
+end
+
+######################################################################
+##EXAMPLE 3: 2nd sum stat matches model poorly
+######################################################################
+function sample_sumstats(pars::Array)
+    success = true
+    theta = pars[1]
+    stats = [theta + 0.1*randn(1), randn(1)]
+    (success, stats)
+end
+
+sobs = [0.0,4.0]
+    
+abcinput = ABCInput();
+abcinput.prior = MvNormal(1, 100.0);
+abcinput.sample_sumstats = sample_sumstats;
+abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.sobs = sobs;
+abcinput.nsumstats = 2;
+
+##Perform ABC-SMC
+srand(20)
+smcoutput5 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
+smcoutput6 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+abcinput.abcdist = MahalanobisDiag(sobs, "ADO");
+smcoutput7 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+
+nits = min(smcoutput5.niterations, smcoutput6.niterations, smcoutput7.niterations)
+PyPlot.figure()
+PyPlot.subplot(131)
+for i in 1:nits
+    plot_init(smcoutput5, i)
+end
+PyPlot.subplot(132)
+for i in 1:nits
+    plot_init(smcoutput6, i)
+end
+PyPlot.subplot(133)
+for i in 1:nits
+    plot_init(smcoutput7, i)
+end    
+PyPlot.subplot(131)
+for i in 1:nits
+    plot_acc(smcoutput5, i)
+end
+PyPlot.subplot(132)
+for i in 1:nits
+    plot_acc(smcoutput6, i)
+end
+PyPlot.subplot(133)
+for i in 1:nits
+    plot_acc(smcoutput7, i)
+end
