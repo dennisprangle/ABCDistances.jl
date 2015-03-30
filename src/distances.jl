@@ -48,27 +48,48 @@ end
 type MahalanobisDiag <: ABCDistance
     sobs::Array{Float64,1}
     w::Array{Float64,1} ##Weights for each summary statistic - square root of estimated precisions
+    scale_type::String ##Whether to initialise scale using "MAD", "sd" or "ADO"
+
+    function MahalanobisDiag(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::String)
+        if (scale_type ∉ ("MAD", "sd", "ADO"))
+            error("scale_type must be MAD sd or ADO")
+        end
+        new(sobs, w, scale_type)
+    end
 end
 
 ##Leaves w undefined
+function MahalanobisDiag(sobs::Array{Float64, 1}, scale_type::String)
+    MahalanobisDiag(sobs, Array(Float64,0), scale_type)
+end
+
 function MahalanobisDiag(sobs::Array{Float64, 1})
-    MahalanobisDiag(sobs, [])
+    MahalanobisDiag(sobs, Array(Float64,0), "MAD")
 end
 
 function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
     (nstats, nsims) = size(sumstats)
     if (nsims == 0)
-        sdev = ones(nstats)
-    else
-        sdev = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
+        sig = ones(nstats)
+    elseif x.scale_type=="MAD"
+        sig = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
+    elseif x.scale_type=="sd"
+        sig = [std(vec(sumstats[i,:])) for i in 1:nstats]
+    elseif x.scale_type=="ADO"
+        sig = [ADO(vec(sumstats[i,:]), x.sobs[i]) for i in 1:nstats]
     end
-    return MahalanobisDiag(x.sobs, 1.0./sdev)
+    return MahalanobisDiag(x.sobs, 1.0./sig, x.scale_type)
 end
 
 ##Median absolute deviation
 function MAD(x::Array{Float64, 1})
     median(abs(x - median(x)))
 end
+
+##Absolute deviation to observations
+function ADO(x::Array{Float64, 1}, obs::Float64)
+    median(abs(x - obs))
+end           
 
 function evaldist(x::MahalanobisDiag, s::Array{Float64, 1})
     absdiff = abs(x.sobs - s)
