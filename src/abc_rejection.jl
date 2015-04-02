@@ -21,7 +21,11 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     nsuccesses = sum(successes)
     parameters = parameters[:, successes]
     sumstats = sumstats[:, successes]
-    newdist = init(in.abcdist, sumstats)
+    if (typeof(in.abcdist)==Qdistance)
+        newdist = init(in.abcdist, sumstats, sumstats, 200) ##A TOTAL HACK WHILE TESTING Qdistance
+    else
+        newdist = init(in.abcdist, sumstats)
+    end
     distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
     if (store_init)
         init_sims = sumstats
