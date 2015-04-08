@@ -1,6 +1,6 @@
 module ABCDistances
 
-using StatsBase.WeightVec, StatsBase.cov, StatsBase.sample, StatsBase.mean, StatsBase.ordinalrank
+using StatsBase: WeightVec, cov, sample, mean
 using Distributions
 import Base.show, Base.copy
 
