@@ -1,8 +1,9 @@
 using ABCDistances
 using Distributions
 import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
+using PyPlot
 
-##Define prior
+##Define prior: uniform on [0,10]^4
 type GKPrior <: ContinuousMultivariateDistribution
 end
 
@@ -37,45 +38,50 @@ srand(1)
 (success, sobs) = sample_sumstats(theta0)
 
 abcinput = ABCInput();
-abcinput.prior = GKPrior()
-abcinput.sample_sumstats = sample_sumstats
-abcinput.abcdist = MahalanobisEmp(sobs)
-abcinput.sobs = sobs
-abcinput.nsumstats = length(quantiles)
-
-##Perform ABC rejection
-abcoutput = abcRejection(abcinput, 10000, 200)
-##abcoutput = abcRejection(abcinput, 10000, 0.3)
-
-##Plot results
-using PyPlot
-pars = abcoutput.parameters
-PyPlot.figure()
-for i in 1:4
-    PyPlot.subplot(220+i)
-    PyPlot.hist(vec(pars[i,:]))
-end
-##What is fitted precision matrix?
-abcoutput.abcdist.Ω
+abcinput.prior = GKPrior();
+abcinput.sample_sumstats = sample_sumstats;
+abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.sobs = sobs;
+abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-SMC
-abcinput.abcdist = MahalanobisDiag(sobs)
-smcoutput1 = abcSMC(abcinput, 800, 200, 2500000);
-smcoutput2 = abcSMC(abcinput, 800, 200, 2500000, adaptive=true);
-abcinput.abcdist = MahalanobisEmp(sobs)
-smcoutput3 = abcSMC(abcinput, 800, 200, 2500000, adaptive=true);
+smcoutput1 = abcSMC(abcinput, 3000, 1000, 1000000);
+smcoutput2 = abcSMC(abcinput, 3000, 1000, 1000000, adaptive=true);
+abcinput.abcdist = MahalanobisDiag(sobs, "ADO")
+smcoutput3 = abcSMC(abcinput, 3000, 1000, 1000000, adaptive=true);
 
 ##Plot variances
-PyPlot.figure()
+b1 = parameter_means(smcoutput1);
+b2 = parameter_means(smcoutput2);
+b3 = parameter_means(smcoutput3);
 v1 = parameter_vars(smcoutput1);
 v2 = parameter_vars(smcoutput2);
+v3 = parameter_vars(smcoutput3);
 c1 = smcoutput1.cusims;
 c2 = smcoutput2.cusims;
+c3 = smcoutput3.cusims;
+PyPlot.figure(figsize=(12,12))
+pnames = ("A", "B", "g", "k")
+for i in 1:4
+    PyPlot.subplot(220+i)
+    PyPlot.plot(c1, vec(log10(v1[i,:])), "b-o")
+    PyPlot.plot(c2, vec(log10(v2[i,:])), "g-o")
+    ##PyPlot.plot(c3, vec(log10(v3[i,:])), "r-o") ##ADO is very similar to MAD
+    PyPlot.title(pnames[i])
+    PyPlot.xlabel("Number of simulations")
+    PyPlot.ylabel("log10(estimated variance)")
+end
+PyPlot.savefig("gk_var.pdf")
+
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(log(c1), vec(log(v1[i,:])))
-    PyPlot.plot(log(c2), vec(log(v2[i,:])))
+    PyPlot.plot(c1, vec(log10((b1[i,:]-theta0[i]).^2)), "b-o")
+    PyPlot.plot(c2, vec(log10((b2[i,:]-theta0[i]).^2)), "g-o")
+    ##PyPlot.plot(c3, vec(log10((b3[i,:]-theta0[i]).^2)), "r-o") ##ADO is very similar to MAD    
+    PyPlot.title(pnames[i])
+    PyPlot.xlabel("Number of simulations")
+    PyPlot.ylabel("log10(bias squared)")
 end
 
 ##Compute weights
@@ -86,11 +92,11 @@ for i in 1:smcoutput2.niterations
 end
 
 ##Plot weights
-PyPlot.figure()
-PyPlot.subplot(211)
-PyPlot.plot(w1/sum(w1))
-PyPlot.subplot(212)
-for i in 1:smcoutput2.niterations
+PyPlot.figure(figsize=(9,3))
+for i in [1,smcoutput2.niterations]
     wi = vec(w2[i,:])
-    PyPlot.plot(wi/sum(wi))
+    PyPlot.plot(wi/sum(wi), "-o")
 end
+PyPlot.xlabel("Summary statistic")
+PyPlot.ylabel("Relative weight")
+PyPlot.savefig("gk_weights.pdf")

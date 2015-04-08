@@ -3,6 +3,27 @@ using Distributions
 using PyPlot
 
 ######################################################################
+##Define plotting functions
+######################################################################
+plot_cols = ("b", "g", "r", "c", "m", "y", "k")
+function plot_init(out::ABCSMCOutput, i::Int32)
+    ssim = out.init_sims[i]
+    n = min(2500, size(ssim)[2])
+    s1 = vec(ssim[1,1:n])
+    s2 = vec(ssim[2,1:n])
+    plot(s1, s2, ".", color=plot_cols[i])
+end
+function plot_acc(out::ABCSMCOutput, i::Int32)
+    w = out.abcdists[i].w
+    h = out.thresholds[i]
+    ##Plot appropriate ellipse
+    θ = [0:0.1:6.3]
+    x = (h/w[1])*sin(θ)+sobs[1]
+    y = (h/w[2])*cos(θ)+sobs[2]
+    plot(x, y, lw=3, color=plot_cols[i])
+end
+
+######################################################################
 ##EXAMPLE 1: one informative summary statistic
 ######################################################################
 ##Set up abcinput
@@ -30,26 +51,7 @@ smcoutput2 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true)
 smcoutput1.abcdists[1].w
 [1.0 ./ smcoutput2.abcdists[i].w for i in 1:smcoutput2.niterations]
 
-######################################################################
 ##Plot simulations from each importance density and acceptance regions
-######################################################################
-##Define plotting functions
-function plot_init(out::ABCSMCOutput, i::Int32)
-    ssim = out.init_sims[i]
-    n = min(2500, size(ssim)[2])
-    s1 = vec(ssim[1,1:n])
-    s2 = vec(ssim[2,1:n])
-    plot(s1, s2, ".")
-end
-function plot_acc(out::ABCSMCOutput, i::Int32)
-    w = out.abcdists[i].w
-    h = out.thresholds[i]
-    ##Plot appropriate ellipse
-    θ = [0:0.1:6.3]
-    x = (h/w[1])*sin(θ)+sobs[1]
-    y = (h/w[2])*cos(θ)+sobs[2]
-    plot(x, y, lw=3)
-end
 nits = min(smcoutput1.niterations, smcoutput2.niterations)
 PyPlot.figure(figsize=(12,12))
 PyPlot.subplot(221)
@@ -70,9 +72,7 @@ for i in 1:nits
 end
 PyPlot.savefig("normal_acc_regions.pdf")
 
-######################################################################
 ##Plot RMSEs
-######################################################################
 PyPlot.figure(figsize=(9,3))
 RMSE1 = [ sqrt(sum(smcoutput1.parameters[1,:,i].^2)) for i in 1:nits ]
 RMSE2 = [ sqrt(sum(smcoutput2.parameters[1,:,i].^2)) for i in 1:nits ]   
@@ -135,7 +135,7 @@ function sample_sumstats(pars::Array)
     (success, stats)
 end
 
-sobs = [0.0,4.0]
+sobs = [0.0,3.0]
     
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
@@ -146,13 +146,13 @@ abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
 srand(20)
-smcoutput5 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
-smcoutput6 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+smcoutput5 = abcSMC(abcinput, 2000, 1000, 250000, store_init=true);
+smcoutput6 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
 abcinput.abcdist = MahalanobisDiag(sobs, "ADO");
-smcoutput7 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+smcoutput7 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
 
 nits = min(smcoutput5.niterations, smcoutput6.niterations, smcoutput7.niterations)
-PyPlot.figure()
+PyPlot.figure(figsize=(12,12))
 PyPlot.subplot(131)
 for i in 1:nits
     plot_init(smcoutput5, i)
@@ -177,3 +177,14 @@ PyPlot.subplot(133)
 for i in 1:nits
     plot_acc(smcoutput7, i)
 end
+PyPlot.savefig("normal_acc_regions2.pdf")
+   
+PyPlot.figure(figsize=(9,3))
+RMSE5 = [ sqrt(sum(smcoutput5.parameters[1,:,i].^2)) for i in 1:nits ]
+RMSE6 = [ sqrt(sum(smcoutput6.parameters[1,:,i].^2)) for i in 1:nits ]
+RMSE7 = [ sqrt(sum(smcoutput7.parameters[1,:,i].^2)) for i in 1:nits ]   
+plot(smcoutput5.cusims[1:nits], RMSE5, "r-o")
+plot(smcoutput6.cusims[1:nits], RMSE6, "b-o")
+plot(smcoutput7.cusims[1:nits], RMSE7, "g-o")
+xlabel("Simulations")
+ylabel("RMSE")  
