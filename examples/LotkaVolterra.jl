@@ -153,7 +153,7 @@ smcoutput_adaptive = abcSMC(abcinput, 400, 200, 50000, adaptive=true);
 ##smcoutput_adaptive = abcSMC(abcinput, 20000, 10000, 1000000, adaptive=true);
 
 abcinput.abcdist = MahalanobisDiag(x0, "ADO");
-smcoutput_ADO = abcSMC(abcinput, 10000, 5000, 1000000, adaptive=true);    
+smcoutput_ADO = abcSMC(abcinput, 400, 200, 50000, adaptive=true);    
 
 ##Look at accepted simulations
 s = rejoutput;
@@ -182,7 +182,16 @@ for it in (1,2,3)
     plot(obs_times, vec(LV_obs[2,:]), "-o")
 end
 
+##NB TWO THINGS GO WRONG IN THIS EXAMPLE
+##1) SMALL ESS DUE TO INITIAL STATE VARIABLES
+##(NORMAL TAILS MUCH HEAVIER THAN POISSON?)
 PyPlot.figure()
-for i in (1,2,3)
-    plot(vec(s.parameters[1,:,i]), vec(s.parameters[3,:,i]), "o")
+scatter(x=vec(s.parameters[5,:,1]), y=vec(s.parameters[6,:,1]), c="red")
+scatter(x=vec(s.parameters[5,:,2]), y=vec(s.parameters[6,:,2]), c="blue", s=1000*vec(s.weights[:,2]))
+
+##2) MORE SERIOUSLY, ABC CONCENTRATES ON THE WRONG SUMMARY STATISTICS. E.G. ADO FOCUSES ON THE LATER STAGES OF THE PREDATOR POPULATION. INFORMATIVE SUMMARY STATISTICS WOULD BE VERY DESIRABLE HERE!
+##This is illustrated by the following plot. This shows the length of each axis of the acceptance ellipse at each iteration.
+PyPlot.figure()
+for (i in 1:s.niterations)
+    plot(s.thresholds[i] ./ s.abcdists[i].w)
 end
