@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/dennisprangle/ABCNorms.jl.svg?branch=master)](https://travis-ci.org/dennisprangle/ABCNorms.jl)
-# ABCNorms
+[![Build Status](https://travis-ci.org/dennisprangle/ABCDistances.jl.svg?branch=master)](https://travis-ci.org/dennisprangle/ABCDistances.jl)
+# ABCDistances
 
-Approximate Bayesian computation with various distance norms.
+Approximate Bayesian computation with various distances.
 
 Work in progress!
 
