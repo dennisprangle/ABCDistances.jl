@@ -57,31 +57,35 @@ b3 = parameter_means(smcoutput3);
 v1 = parameter_vars(smcoutput1);
 v2 = parameter_vars(smcoutput2);
 v3 = parameter_vars(smcoutput3);
-c1 = smcoutput1.cusims;
-c2 = smcoutput2.cusims;
-c3 = smcoutput3.cusims;
+c1 = smcoutput1.cusims ./ 1000;
+c2 = smcoutput2.cusims ./ 1000;
+c3 = smcoutput3.cusims ./ 1000;
 PyPlot.figure(figsize=(12,12))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
     PyPlot.plot(c1, vec(log10(v1[i,:])), "b-o")
-    PyPlot.plot(c2, vec(log10(v2[i,:])), "g-o")
+    PyPlot.plot(c2, vec(log10(v2[i,:])), "g-^")
     ##PyPlot.plot(c3, vec(log10(v3[i,:])), "r-o") ##ADO is very similar to MAD
+    PyPlot.axis([0,600,-4,1]);
     PyPlot.title(pnames[i])
-    PyPlot.xlabel("Number of simulations")
-    PyPlot.ylabel("log10(estimated variance)")
+    PyPlot.xlabel("Number of simulations (000s)")
+    PyPlot.ylabel("log₁₀(estimated variance)")
+    PyPlot.legend(["Non-adaptive","Adaptive"])
 end
+PyPlot.tight_layout();
 PyPlot.savefig("gk_var.pdf")
 
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
     PyPlot.plot(c1, vec(log10((b1[i,:]-theta0[i]).^2)), "b-o")
-    PyPlot.plot(c2, vec(log10((b2[i,:]-theta0[i]).^2)), "g-o")
+    PyPlot.plot(c2, vec(log10((b2[i,:]-theta0[i]).^2)), "g-^")
     ##PyPlot.plot(c3, vec(log10((b3[i,:]-theta0[i]).^2)), "r-o") ##ADO is very similar to MAD    
     PyPlot.title(pnames[i])
-    PyPlot.xlabel("Number of simulations")
-    PyPlot.ylabel("log10(bias squared)")
+    PyPlot.xlabel("Number of simulations (000s)")
+    PyPlot.ylabel("log₁₀(bias squared)")
+    PyPlot.legend(["Non-adaptive","Adaptive"])
 end
 
 ##Compute weights
@@ -93,10 +97,13 @@ end
 
 ##Plot weights
 PyPlot.figure(figsize=(9,3))
-for i in [1,smcoutput2.niterations]
-    wi = vec(w2[i,:])
-    PyPlot.plot(wi/sum(wi), "-o")
-end
-PyPlot.xlabel("Summary statistic")
+wfirst = vec(w2[1,:])
+PyPlot.plot(1:9, wfirst/sum(wfirst), "-o")
+wlast = vec(w2[smcoutput2.niterations, :])
+PyPlot.plot(1:9, wlast/sum(wlast), "-^")
+##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
+PyPlot.legend(["First iteration","Last iteration"])
+PyPlot.xlabel("Order statistic (000s)")
 PyPlot.ylabel("Relative weight")
+PyPlot.tight_layout();
 PyPlot.savefig("gk_weights.pdf")

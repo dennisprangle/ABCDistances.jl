@@ -5,7 +5,7 @@ using PyPlot
 ######################################################################
 ##Define plotting functions
 ######################################################################
-plot_cols = ("b", "g", "r", "c", "m", "y", "k")
+plot_cols = ("b", "g", "r", "c", "m", "y", "k");
 function plot_init(out::ABCSMCOutput, i::Int32)
     ssim = out.init_sims[i]
     n = min(2500, size(ssim)[2])
@@ -33,7 +33,7 @@ function sample_sumstats(pars::Array)
     (success, stats)
 end
 
-sobs = [0.0,0.0]
+sobs = [0.0,0.0];
 
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
@@ -43,13 +43,14 @@ abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
-srand(20)
+srand(20);
 smcoutput1 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
+srand(20);
 smcoutput2 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
 
 ##Look at weights
 smcoutput1.abcdists[1].w
-[1.0 ./ smcoutput2.abcdists[i].w for i in 1:smcoutput2.niterations]
+[smcoutput2.abcdists[i].w for i in 1:smcoutput2.niterations]
 
 ##Plot simulations from each importance density and acceptance regions
 nits = min(smcoutput1.niterations, smcoutput2.niterations)
@@ -58,18 +59,31 @@ PyPlot.subplot(221)
 for i in 1:nits
     plot_init(smcoutput1, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Non-adaptive simulations")
 PyPlot.subplot(222)
 for i in 1:nits
     plot_init(smcoutput2, i)
-end 
+end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$") 
+PyPlot.title("Adaptive simulations")
 PyPlot.subplot(223)
 for i in 1:nits
     plot_acc(smcoutput1, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Non-adaptive acceptance regions")
 PyPlot.subplot(224)
 for i in 1:nits
     plot_acc(smcoutput2, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Adaptive acceptance regions")
+PyPlot.tight_layout()
 PyPlot.savefig("normal_acc_regions.pdf")
 
 ##Plot RMSEs
@@ -79,7 +93,8 @@ RMSE2 = [ sqrt(sum(smcoutput2.parameters[1,:,i].^2)) for i in 1:nits ]
 plot(smcoutput1.cusims[1:nits], RMSE1, "r-o")
 plot(smcoutput2.cusims[1:nits], RMSE2, "b-o")
 xlabel("Simulations")
-ylabel("RMSE")  
+ylabel("RMSE")
+PyPlot.tight_layout()
 PyPlot.savefig("normal_RMSE.pdf")
 
 ######################################################################
@@ -135,7 +150,7 @@ function sample_sumstats(pars::Array)
     (success, stats)
 end
 
-sobs = [0.0,3.0]
+sobs = [0.0,3.0];
     
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
@@ -145,10 +160,12 @@ abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
-srand(20)
+srand(20);
 smcoutput5 = abcSMC(abcinput, 2000, 1000, 250000, store_init=true);
+srand(20);
 smcoutput6 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
 abcinput.abcdist = MahalanobisDiag(sobs, "ADO");
+srand(20);
 smcoutput7 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
 
 nits = min(smcoutput5.niterations, smcoutput6.niterations, smcoutput7.niterations)
@@ -169,14 +186,24 @@ PyPlot.subplot(131)
 for i in 1:nits
     plot_acc(smcoutput5, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Non-adaptive")
 PyPlot.subplot(132)
 for i in 1:nits
     plot_acc(smcoutput6, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Adaptive MAD")
 PyPlot.subplot(133)
 for i in 1:nits
     plot_acc(smcoutput7, i)
 end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.title("Adaptive MADO")
+PyPlot.tight_layout()
 PyPlot.savefig("normal_acc_regions2.pdf")
    
 PyPlot.figure(figsize=(9,3))
