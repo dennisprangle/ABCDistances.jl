@@ -5,6 +5,7 @@
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
 function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false)
+    prog = Progress(maxsims, 1) ##Progress meter (TO DO: not currently updated during 1st iteration)
     nparameters = length(abcinput.prior)
     ##First iteration is just standard rejection sampling
     curroutput = abcRejection(abcinput, N, k, store_init=store_init)
@@ -48,6 +49,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             ##Draw summaries
             (success, propstats) = abcinput.sample_sumstats(proppars)
             simsdone += 1
+            next!(prog)
             if (!success)
                 ##If rejection occurred during simulation
                 continue
