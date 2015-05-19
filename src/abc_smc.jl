@@ -4,7 +4,8 @@
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
-function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false)
+##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
+function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false)
     prog = Progress(maxsims, 1) ##Progress meter (TO DO: not currently updated during 1st iteration)
     nparameters = length(abcinput.prior)
     ##First iteration is just standard rejection sampling
@@ -24,9 +25,16 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
     cusims = [N]
     ##Main loop
     while (simsdone < maxsims)
-        ##Calculate variance of current weighted particle approximation
-        currvar = cov(curroutput.parameters, WeightVec(curroutput.weights), vardim=2)
-        perturbdist = MvNormal(2.0 .* currvar)
+        wv = WeightVec(curroutput.weights)
+        if (diag_perturb)
+            ##Calculate diagonalised variance of current weighted particle approximation
+            diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
+            perturbdist = MvNormal(2.0 .* diagvar)
+        else
+            ##Calculate variance of current weighted particle approximation
+            currvar = cov(curroutput.parameters, wv, vardim=2)
+            perturbdist = MvNormal(2.0 .* currvar)
+        end
         ##Initialise new reference table
         newparameters = Array(Float64, (nparameters, N))
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
