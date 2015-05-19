@@ -50,7 +50,8 @@ abcinput.sobs = sobs;
 abcinput.nsumstats = length(sobs);
 
 ##Perform ABC-SMC
-smcoutput1 = abcSMC(abcinput, 1000, 500, 10000, adaptive=true);
+##(n.b. diag_perturb should be true to match SAGMB paper)
+smcoutput1 = abcSMC(abcinput, 1500, 1000, 15000, adaptive=true, diag_perturb=true);
 
 ##Inspect output weights
 [smcoutput1.abcdists[i].w for i in 1:smcoutput1.niterations]
