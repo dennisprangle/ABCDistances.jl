@@ -14,14 +14,14 @@ end
 
 function _rand!{T<:Real}(d::CampyPrior, x::AbstractVector{T})
     logcross::Float64 = rand(TruncatedNormal(0.27,  1.873, -Inf, log(25.0)))
-    logtract::Float64 = rand(TruncatedNormal(1.513, 1.956, log(1/1000), Inf))
+    logtract::Float64 = rand(TruncatedNormal(1.513, 1.956, log(1/1000), 25.0)) ##ms crashes outside these bounds
     logmut::Float64   = rand(         Normal(2.617, 0.2683))
     [logcross, logtract, logmut]
 end
 
 function _logpdf{T<:Real}(d::CampyPrior, x::AbstractVector{T})
     l::Float64 = logpdf(TruncatedNormal(0.27,  1.873, -Inf, log(25.0)), x[1])
-    l         += logpdf(TruncatedNormal(1.513, 1.956, log(1/1000), Inf), x[2])
+    l         += logpdf(TruncatedNormal(1.513, 1.956, log(1/1000), 25.0), x[2])
     l         += logpdf(Normal(2.617, 0.2683), x[3])
     l
 end
