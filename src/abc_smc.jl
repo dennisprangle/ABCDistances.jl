@@ -8,32 +8,28 @@
 function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false)
     prog = Progress(maxsims, 1) ##Progress meter (TO DO: not currently updated during 1st iteration)
     nparameters = length(abcinput.prior)
-    ##First iteration is just standard rejection sampling
-    curroutput = abcRejection(abcinput, N, k, store_init=store_init)
-    itsdone = 1
-    print("Iteration $itsdone, $N sims done\n")
-    @printf("Acceptance rate %.1e percent\n", 100*k/N)
-    print("Output of most recent stage:\n")
-    print(curroutput)
-    ##TO DO: Consider some stopping conditions? (e.g. threshold = 0) Call a "stopearly" method?
+    itsdone = 0
+    simsdone = 0
+    firstit = true
     ##We record a sequence of distances and thresholds
     ##(for non-adaptive case all distances the same, and we only use most recent threshold)
-    dists = [curroutput.abcdist]
-    thresholds = [curroutput.distances[k]]
-    rejOutputs = [curroutput]
-    simsdone = N
-    cusims = [N]
+    dists = ABCDistance[]
+    thresholds = Float64[]
+    rejOutputs = ABCRejOutput[]
+    cusims = Int32[]
     ##Main loop
     while (simsdone < maxsims)
-        wv = WeightVec(curroutput.weights)
-        if (diag_perturb)
-            ##Calculate diagonalised variance of current weighted particle approximation
-            diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
-            perturbdist = MvNormal(2.0 .* diagvar)
-        else
-            ##Calculate variance of current weighted particle approximation
-            currvar = cov(curroutput.parameters, wv, vardim=2)
-            perturbdist = MvNormal(2.0 .* currvar)
+        if !firstit
+            wv = WeightVec(curroutput.weights)
+            if (diag_perturb)
+                ##Calculate diagonalised variance of current weighted particle approximation
+                diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
+                perturbdist = MvNormal(2.0 .* diagvar)
+            else
+                ##Calculate variance of current weighted particle approximation
+                currvar = cov(curroutput.parameters, wv, vardim=2)
+                perturbdist = MvNormal(2.0 .* currvar)
+            end
         end
         ##Initialise new reference table
         newparameters = Array(Float64, (nparameters, N))
@@ -48,7 +44,11 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Loop to fill up new reference table
         while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
-            proppars = rimportance(curroutput, perturbdist)
+            if (firstit)
+                proppars = rand(abcinput.prior)
+            else
+                proppars = rimportance(curroutput, perturbdist)
+            end
             ##Calculate prior weight and reject if zero
             priorweight = pdf(abcinput.prior, proppars)
             if (priorweight == 0.0)
@@ -66,7 +66,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
             end
-            if (adaptive)
+            if (firstit)
+                ##No rejection at this stage in first iteration
+                accept = true
+            elseif (adaptive)
                 ##Accept if all prev distances less than corresponding thresholds.
                 accept = propgood(propstats, dists, thresholds)
             else
@@ -96,7 +99,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             sumstats_forinit = Array(Float64, (0,0))
         end
         ##Create new distance if needed
-        if (adaptive)
+        if (firstit || adaptive)
             newdist = init(abcinput.abcdist, sumstats_forinit)
         else
             newdist = dists[1]
@@ -105,7 +108,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         
         ##Calculate distances
         distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
-        oldoutput = copy(curroutput)
+        if !firstit
+            oldoutput = copy(curroutput)
+        end
         curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist, sumstats_forinit) ##Set new weights to zero for now
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
@@ -114,17 +119,27 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         curroutput.parameters = curroutput.parameters[:,1:k]
         curroutput.sumstats = curroutput.sumstats[:,1:k]
         curroutput.distances = curroutput.distances[1:k]
-        curroutput.weights = getweights(curroutput, newpriorweights, oldoutput, perturbdist)
+        if firstit
+            curroutput.weights = ones(k)
+        else
+            curroutput.weights = getweights(curroutput, newpriorweights, oldoutput, perturbdist)
+        end
             
         ##Record output
         push!(rejOutputs, curroutput)
         ##Report status
         print("Iteration $itsdone, $simsdone sims done\n")
-        @printf("Acceptance rate %.1e percent\n", 100*k/(cusims[itsdone]-cusims[itsdone-1]))
+        if firstit
+            accrate = k/simsdone            
+        else
+            accrate = k/(simsdone-cusims[itsdone-1])
+        end
+        @printf("Acceptance rate %.1e percent\n", 100*accrate)
         print("Output of most recent stage:\n")
         print(curroutput)
-        ##Make some plots as well?
-        ##Consider alternative stopping conditions? (e.g. zero threshold reached)
+        ##TO DO: make some plots as well?
+        ##TO DO: consider alternative stopping conditions? (e.g. zero threshold reached)
+        firstit = false
     end
         
     ##Put results into ABCSMCOutput object
