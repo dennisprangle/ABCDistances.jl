@@ -77,8 +77,8 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 accept = propgood(propstats, dists[itsdone], thresholds[itsdone])
             end
             if (accept)
-                newparameters[:,nextparticle] = proppars
-                newsumstats[:,nextparticle] = propstats
+                newparameters[:,nextparticle] = copy(proppars)
+                newsumstats[:,nextparticle] = copy(propstats)                
                 newpriorweights[nextparticle] = priorweight
                 nextparticle += 1
             end
@@ -111,7 +111,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if !firstit
             oldoutput = copy(curroutput)
         end
-        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, zeros(N), newdist, sumstats_forinit) ##Set new weights to zero for now
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit) ##Temporarily use prior weights
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -122,7 +122,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if firstit
             curroutput.weights = ones(k)
         else
-            curroutput.weights = getweights(curroutput, newpriorweights, oldoutput, perturbdist)
+            curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
         end
             
         ##Record output
@@ -185,7 +185,7 @@ function rimportance(out::ABCRejOutput, dist::MvNormal)
     out.parameters[:,i] + rand(dist)
 end
 
-##Calculate a single importance weight
+##Calculate a single importance weight        
 function get1weight(x::Array{Float64,1}, priorweight::Float64, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(old.parameters)[2]
     temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
