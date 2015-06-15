@@ -29,7 +29,8 @@ type ABCRejOutput <: ABCOutput
     distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim
     weights::Array{Float64, 1}    ##weights[i] is weight for ith accepted sim
     abcdist::ABCDistance
-    init_sims::Array{Float64, 2} ##sims used for distance initialisation (only stored optionally)
+    init_sims::Array{Float64, 2}  ##sims used for distance initialisation (only stored optionally)
+    init_pars::Array{Float64, 2}  ##pars used for distance initialisation (only stored optionally)
 end
 
 ##ABC SMC output
@@ -46,6 +47,7 @@ type ABCSMCOutput <: ABCOutput
     abcdists::Array{ABCDistance, 1}    ##abcdist[i] is distance used in iteration i
     thresholds::Array{Float64, 1}  ##threshold[i] is threshold used in iteration i
     init_sims::Array{Array{Float64, 2}, 1} ##init_sims[i] is sims for distance initialisation at iteration i (only stored optionally)
+    init_pars::Array{Array{Float64, 2}, 1} ##init_pars[i] is pars for distance initialisation at iteration i (only stored optionally)
 end
 
 ##This needs a show function
@@ -90,7 +92,7 @@ function show(io::IO, out::ABCRejOutput)
 end
 
 function copy(out::ABCRejOutput)
-    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.nsuccesses, out.parameters, out.sumstats, out.distances, out.weights, out.abcdist, out.init_sims)
+    ABCRejOutput(out.nparameters, out.nsumstats, out.nsims, out.nsuccesses, out.parameters, out.sumstats, out.distances, out.weights, out.abcdist, out.init_sims, out.init_pars)
 end
 
 ##Sort output into distance order

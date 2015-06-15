@@ -27,10 +27,12 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
     if (store_init)
         init_sims = sumstats
+        init_pars = parameters
     else
         init_sims = Array(Float64, (0,0))
+        init_pars = Array(Float64, (0,0))
     end
-    out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist, init_sims)
+    out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist, init_sims, init_pars)
     sortABCOutput!(out)
     out
 end

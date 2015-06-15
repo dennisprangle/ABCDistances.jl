@@ -116,7 +116,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         if !firstit
             oldoutput = copy(curroutput)
         end
-        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit) ##Temporarily use prior weights
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
         newthreshold = curroutput.distances[k]
@@ -159,15 +159,17 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         weights[:,i] = rejOutputs[i].weights
     end
     if (store_init)
-        ##TO DO: should store initialisation parameters as well
         init_sims = Array(Array{Float64, 2}, itsdone)
+        init_pars = Array(Array{Float64, 2}, itsdone)
         for i in 1:itsdone
             init_sims[i] = rejOutputs[i].init_sims
+            init_pars[i] = rejOutputs[i].init_pars
         end
     else
         init_sims = Array(Array{Float64, 2}, 0)
+        init_pars = Array(Array{Float64, 2}, 0)
     end
-    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims)
+    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
 
 ##Check if summary statistics meet acceptance requirement
