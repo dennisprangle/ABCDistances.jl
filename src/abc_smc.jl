@@ -37,8 +37,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newpriorweights = Array(Float64, N)
         successes_thisit = 0
         if (adaptive || store_init)
-            ##Initialise storage of all simulated summaries for use initialising the distance function
+            ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
+            pars_forinit = Array(Float64, (nparameters, nsims_for_init))
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -65,6 +66,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             if ((adaptive || store_init) && successes_thisit < nsims_for_init)
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
+                pars_forinit[:,successes_thisit] = proppars
             end
             if (firstit)
                 ##No rejection at this stage in first iteration
@@ -90,17 +92,20 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Update counters
         itsdone += 1
         push!(cusims, simsdone)
-        ##Trim sumstats_forinit to correct size
+        ##Trim pars_forinit and sumstats_forinit to correct size
         if (adaptive || store_init)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
+                pars_forinit = pars_forinit[:,1:successes_thisit]
             end
         else
+            ##Create some empty arrays to use as arguments
             sumstats_forinit = Array(Float64, (0,0))
+            pars_forinit = Array(Float64, (0,0))
         end
         ##Create new distance if needed
         if (firstit || adaptive)
-            newdist = init(abcinput.abcdist, sumstats_forinit)
+            newdist = init(abcinput.abcdist, sumstats_forinit, pars_forinit)
         else
             newdist = dists[1]
         end

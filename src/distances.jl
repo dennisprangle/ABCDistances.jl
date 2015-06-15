@@ -51,8 +51,8 @@ type MahalanobisDiag <: ABCDistance
     scale_type::String ##Whether to initialise scale using "MAD", "sd" or "ADO"
 
     function MahalanobisDiag(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::String)
-        if (scale_type ∉ ("MAD", "sd", "ADO"))
-            error("scale_type must be MAD sd or ADO")
+        if (scale_type ∉ ("MAD", "sd", "sdreg", "ADO"))
+            error("scale_type must be MAD sd sdreg or ADO")
         end
         new(sobs, w, scale_type)
     end
@@ -67,7 +67,7 @@ function MahalanobisDiag(sobs::Array{Float64, 1})
     MahalanobisDiag(sobs, Array(Float64,0), "MAD")
 end
 
-function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
+function init(x::MahalanobisDiag, sumstats::Array{Float64, 2}, parameters::Array{Float64, 2})
     (nstats, nsims) = size(sumstats)
     if (nsims == 0)
         sig = ones(nstats)
@@ -75,6 +75,15 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2})
         sig = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
     elseif x.scale_type=="sd"
         sig = [std(vec(sumstats[i,:])) for i in 1:nstats]
+    elseif x.scale_type=="sdreg"
+        P = hcat(ones(nsims), parameters')
+        sig = Array(Float64, nstats)
+        for i in 1:nstats
+            y = vec(sumstats[i,:])
+            beta = y \ P
+            res = y - P * beta'
+            sig[i] = std(res)
+        end
     elseif x.scale_type=="ADO"
         sig = [ADO(vec(sumstats[i,:]), x.sobs[i]) for i in 1:nstats]
     end
