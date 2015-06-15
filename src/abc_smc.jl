@@ -36,7 +36,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         newsumstats = Array(Float64, (abcinput.nsumstats, N))
         newpriorweights = Array(Float64, N)
         successes_thisit = 0
-        if (adaptive || store_init)
+        if (firstit || adaptive || store_init)
             ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
             pars_forinit = Array(Float64, (nparameters, nsims_for_init))
@@ -63,7 +63,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
                 ##If rejection occurred during simulation
                 continue
             end
-            if ((adaptive || store_init) && successes_thisit < nsims_for_init)
+            if ((firstit || adaptive || store_init) && successes_thisit < nsims_for_init)
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
                 pars_forinit[:,successes_thisit] = proppars
@@ -93,7 +93,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         itsdone += 1
         push!(cusims, simsdone)
         ##Trim pars_forinit and sumstats_forinit to correct size
-        if (adaptive || store_init)
+        if (firstit || adaptive || store_init)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
                 pars_forinit = pars_forinit[:,1:successes_thisit]
@@ -159,6 +159,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         weights[:,i] = rejOutputs[i].weights
     end
     if (store_init)
+        ##TO DO: should store initialisation parameters as well
         init_sims = Array(Array{Float64, 2}, itsdone)
         for i in 1:itsdone
             init_sims[i] = rejOutputs[i].init_sims
