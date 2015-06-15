@@ -9,6 +9,7 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     parameters = Array(Float64, (nparameters, nsims))
     sumstats = zeros(Float64, (in.nsumstats, nsims))
     successes = Array(Bool, (nsims))
+    prog = Progress(nsims, 1) ##Progress meter
     for i in 1:nsims
         pars = rand(in.prior)
         parameters[:,i] = pars
@@ -17,6 +18,7 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
         if (success)
             sumstats[:,i] = stats
         end
+        next!(prog)
     end
     nsuccesses = sum(successes)
     parameters = parameters[:, successes]

@@ -6,7 +6,7 @@
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
 ##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
 function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false)
-    prog = Progress(maxsims, 1) ##Progress meter (TO DO: not currently updated during 1st iteration)
+    prog = Progress(maxsims, 1) ##Progress meter
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0
