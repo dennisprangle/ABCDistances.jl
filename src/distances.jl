@@ -81,7 +81,7 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2}, parameters::Array
         for i in 1:nstats
             y = vec(sumstats[i,:])
             beta = linreg(P, y)
-            res = y - beta[1] - P * beta[2:end]'
+            res = y - beta[1] - P * beta[2:end]
             sig[i] = std(res)
         end
     elseif x.scale_type=="ADO"
