@@ -10,7 +10,7 @@ export
   init, evaldist, ##ABCDistance methods
   ABCInput, RefTable, ABCOutput, ABCRejOutput, ABCSMCOutput, ##General ABC types
   sortABCOutput!, show, copy, parameter_means, parameter_vars, parameter_covs, ##General ABC methods
-  abcRejection, abcSMC, ##ABC algorithms
+  abcRejection, abcSMC, abcSMC_comparison, ##ABC algorithms
   rgk, rgk_os, ##g&k methods
   Stoichiometry, gillespie_partial_sim, gillespie_sim ##Gillespie algorithm
   

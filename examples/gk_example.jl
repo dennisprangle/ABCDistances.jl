@@ -55,25 +55,30 @@ abcinput.nsumstats = length(quantiles);
 ##Perform ABC-SMC
 smcoutput1 = abcSMC(abcinput, 3000, 1/3, 1000000);
 smcoutput2 = abcSMC(abcinput, 3000, 1/3, 1000000, adaptive=true);
+smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000);
 
 ##Plot variances
 b1 = parameter_means(smcoutput1);
 b2 = parameter_means(smcoutput2);
+b3 = parameter_means(smcoutput3);
 v1 = parameter_vars(smcoutput1);
 v2 = parameter_vars(smcoutput2);
+v3 = parameter_vars(smcoutput3);
 c1 = smcoutput1.cusims ./ 1000;
 c2 = smcoutput2.cusims ./ 1000;
+c3 = smcoutput3.cusims ./ 1000;
 PyPlot.figure(figsize=(12,12))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
     PyPlot.plot(c1, vec(log10(v1[i,:])), "b-o")
     PyPlot.plot(c2, vec(log10(v2[i,:])), "g-^")
-    PyPlot.axis([0,maximum([c1,c2]),-4,1]);
+    PyPlot.plot(c3, vec(log10(v3[i,:])), "r-x")
+    PyPlot.axis([0,maximum([c1,c2,c3]),-4,1]);
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(estimated variance)")
-    PyPlot.legend(["Non-adaptive","Adaptive"])
+    PyPlot.legend(["Non-adaptive (alg 3)","Adaptive (alg 3)","Non-adaptive (alg 2)"])
 end
 PyPlot.tight_layout();
 PyPlot.savefig("gk_var.pdf")
@@ -83,10 +88,11 @@ for i in 1:4
     PyPlot.subplot(220+i)
     PyPlot.plot(c1, vec(log10((b1[i,:]-theta0[i]).^2)), "b-o")
     PyPlot.plot(c2, vec(log10((b2[i,:]-theta0[i]).^2)), "g-^")
+    PyPlot.plot(c3, vec(log10((b3[i,:]-theta0[i]).^2)), "r-x")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(bias squared)")
-    PyPlot.legend(["Non-adaptive","Adaptive"])
+    PyPlot.legend(["Non-adaptive (alg 3)","Adaptive (alg 3)","Non-adaptive (alg 2)"])
 end
 
 ##Compute weights
@@ -95,6 +101,7 @@ w2 = Array(Float64, (smcoutput2.niterations, length(quantiles)));
 for i in 1:smcoutput2.niterations
     w2[i,:] = smcoutput2.abcdists[i].w
 end
+w3 = smcoutput3.abcdists[1].w;
 
 ##Plot weights
 PyPlot.figure(figsize=(9,3))

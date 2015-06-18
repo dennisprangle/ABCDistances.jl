@@ -140,7 +140,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         push!(rejOutputs, curroutput)
         ##Report status
         if !silent
-            print("Iteration $itsdone, $simsdone sims done\n")
+            print("\n Iteration $itsdone, $simsdone sims done\n")
             if firstit
                 accrate = k/simsdone            
             else
@@ -186,7 +186,7 @@ function propgood(s::Array{Float64, 1}, dist::ABCDistance, threshold::Float64)
 end
 
 ##Check if summary statistics meet all of previous acceptance requirements
-function propgood(s::Array{Float64, 1}, dists::Array, thresholds::Array{Float64, 1})
+function propgood(s::Array{Float64, 1}, dists::Array{ABCDistance, 1}, thresholds::Array{Float64, 1})
     for i in [length(dists):-1:1] ##Check the most stringent case first
         if !propgood(s, dists[i], thresholds[i])
             return false
@@ -213,4 +213,172 @@ function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::
     nparticles = size(current.parameters)[2]
     weights = [get1weight(current.parameters[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
+end
+
+##Version of algorithm in which h updated at end of iteration
+##Included so comparisons can be made in the paper
+##TO DO: sort out code repetition with abcSMC somehow (make some common bits into functions?)
+function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; store_init=false, diag_perturb=false, silent=false)
+    if !silent
+        prog = Progress(maxsims, 1) ##Progress meter
+    end
+    k::Int32 = ceil(N*α)
+    nparameters = length(abcinput.prior)
+    itsdone = 0
+    simsdone = 0
+    firstit = true
+    ##We record a sequence of distances and thresholds
+    ##(all distances the same but we record a sequence for consistency with other algorithm)
+    dists = ABCDistance[]
+    thresholds = Float64[Inf]
+    rejOutputs = ABCRejOutput[]
+    cusims = Int32[]
+    ##Main loop
+    while (simsdone < maxsims)
+        if !firstit
+            wv = WeightVec(curroutput.weights)
+            if (diag_perturb)
+                ##Calculate diagonalised variance of current weighted particle approximation
+                diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
+                perturbdist = MvNormal(2.0 .* diagvar)
+            else
+                ##Calculate variance of current weighted particle approximation
+                currvar = cov(curroutput.parameters, wv, vardim=2)
+                perturbdist = MvNormal(2.0 .* currvar)
+            end
+        end
+        ##Initialise new reference table
+        newparameters = Array(Float64, (nparameters, N))
+        newsumstats = Array(Float64, (abcinput.nsumstats, N))
+        newpriorweights = Array(Float64, N)
+        successes_thisit = 0
+        if (firstit || store_init)
+            ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
+            sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
+            pars_forinit = Array(Float64, (nparameters, nsims_for_init))
+        end
+        nextparticle = 1
+        ##Loop to fill up new reference table
+        while (nextparticle <= N && simsdone<maxsims)
+            ##Sample parameters from importance density
+            if (firstit)
+                proppars = rand(abcinput.prior)
+            else
+                proppars = rimportance(curroutput, perturbdist)
+            end
+            ##Calculate prior weight and reject if zero
+            priorweight = pdf(abcinput.prior, proppars)
+            if (priorweight == 0.0)
+                continue
+            end          
+            ##Draw summaries
+            (success, propstats) = abcinput.sample_sumstats(proppars)
+            simsdone += 1
+            if !silent
+                next!(prog)
+            end
+            if (!success)
+                ##If rejection occurred during simulation
+                continue
+            end
+            if ((firstit || store_init) && successes_thisit < nsims_for_init)
+                successes_thisit += 1
+                sumstats_forinit[:,successes_thisit] = propstats
+                pars_forinit[:,successes_thisit] = proppars
+            end
+            if (firstit)
+                ##No rejection at this stage in first iteration
+                accept = true
+            else
+                ##Accept if distance less than current threshold
+                accept = propgood(propstats, dists[1], thresholds[itsdone+1])
+            end
+            if (accept)
+                newparameters[:,nextparticle] = copy(proppars)
+                newsumstats[:,nextparticle] = copy(propstats)                
+                newpriorweights[nextparticle] = priorweight
+                nextparticle += 1
+            end
+        end
+        ##Stop if not all sims required to continue have been done (because simsdone==maxsims)
+        if nextparticle<=N
+            continue
+        end
+        ##Update counters
+        itsdone += 1
+        push!(cusims, simsdone)
+        ##Trim pars_forinit and sumstats_forinit to correct size
+        if (firstit || store_init)
+            if (successes_thisit < nsims_for_init)
+                sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
+                pars_forinit = pars_forinit[:,1:successes_thisit]
+            end
+        end
+        ##Create new distance if needed
+        if (firstit)
+            newdist = init(abcinput.abcdist, sumstats_forinit, pars_forinit)
+        else
+            newdist = dists[1]
+        end
+        push!(dists, newdist)
+        
+        ##Calculate distances
+        distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
+        if !firstit
+            oldoutput = copy(curroutput)
+        end
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
+        ##Calculate and store threshold for next iteration
+        sortABCOutput!(curroutput)
+        newthreshold = curroutput.distances[k]
+        push!(thresholds, newthreshold)
+        if firstit
+            curroutput.weights = ones(N)
+        else
+            curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
+        end
+            
+        ##Record output
+        push!(rejOutputs, curroutput)
+        ##Report status
+        if !silent
+            print("\n Iteration $itsdone, $simsdone sims done\n")
+            if firstit
+                accrate = k/simsdone            
+            else
+            accrate = k/(simsdone-cusims[itsdone-1])
+            end
+            @printf("Acceptance rate %.1e percent\n", 100*accrate)
+            print("Output of most recent stage:\n")
+            print(curroutput)
+            print("Next threshold: $newthreshold\n")
+            ##TO DO: make some plots as well?
+        end
+        ##TO DO: consider alternative stopping conditions? (e.g. zero threshold reached)
+        firstit = false
+    end
+        
+    ##Put results into ABCSMCOutput object
+    parameters = Array(Float64, (nparameters, N, itsdone))
+    sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
+    distances = Array(Float64, (N, itsdone))
+    weights = Array(Float64, (N, itsdone))
+    for i in 1:itsdone        
+        parameters[:,:,i] = rejOutputs[i].parameters
+        sumstats[:,:,i] = rejOutputs[i].sumstats
+        distances[:,i] = rejOutputs[i].distances
+        weights[:,i] = rejOutputs[i].weights
+    end
+    if (store_init)
+        init_sims = Array(Array{Float64, 2}, itsdone)
+        init_pars = Array(Array{Float64, 2}, itsdone)
+        for i in 1:itsdone
+            init_sims[i] = rejOutputs[i].init_sims
+            init_pars[i] = rejOutputs[i].init_pars
+        end
+    else
+        init_sims = Array(Array{Float64, 2}, 0)
+        init_pars = Array(Array{Float64, 2}, 0)
+    end
+    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
