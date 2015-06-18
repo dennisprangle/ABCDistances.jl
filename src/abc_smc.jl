@@ -351,7 +351,7 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
             @printf("Acceptance rate %.1e percent\n", 100*accrate)
             print("Output of most recent stage:\n")
             print(curroutput)
-            print("Next threshold: $newthreshold\n")
+            print("Next threshold: $(convert(Float32, newthreshold))\n") ##Float64 shows too many significant figures
             ##TO DO: make some plots as well?
         end
         ##TO DO: consider alternative stopping conditions? (e.g. zero threshold reached)
