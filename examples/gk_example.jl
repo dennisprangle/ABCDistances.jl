@@ -53,8 +53,8 @@ abcinput.sobs = sobs;
 abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-SMC
-smcoutput1 = abcSMC(abcinput, 3000, 1/3, 1000000);
-smcoutput2 = abcSMC(abcinput, 3000, 1/3, 1000000, adaptive=true);
+smcoutput1 = abcSMC(abcinput, 1000, 1/3, 1000000);
+smcoutput2 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
 smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000);
 
 ##Plot variances
@@ -152,9 +152,9 @@ for i in 1:ndatasets
     (success, sobs) = sample_sumstats(theta0)
     abcinput.abcdist = WeightedEuclidean(sobs)
     abcinput.sobs = sobs
-    smcoutput1 = abcSMC(abcinput, 3000, 1/3, 1000000, silent=true)
+    smcoutput1 = abcSMC(abcinput, 1000, 1/3, 1000000, silent=true)
     next!(prog)
-    smcoutput2 = abcSMC(abcinput, 3000, 1/3, 1000000, adaptive=true, silent=true)
+    smcoutput2 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
     next!(prog)
     smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000, silent=true)
     next!(prog)

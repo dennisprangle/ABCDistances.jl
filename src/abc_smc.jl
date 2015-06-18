@@ -10,7 +10,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
-    k::Int32 = ceil(N*α)
+    M::Int32 = ceil(N/α)
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0
@@ -36,9 +36,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
             end
         end
         ##Initialise new reference table
-        newparameters = Array(Float64, (nparameters, N))
-        newsumstats = Array(Float64, (abcinput.nsumstats, N))
-        newpriorweights = Array(Float64, N)
+        newparameters = Array(Float64, (nparameters, M))
+        newsumstats = Array(Float64, (abcinput.nsumstats, M))
+        newpriorweights = Array(Float64, M)
         successes_thisit = 0
         if (firstit || adaptive || store_init)
             ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
@@ -47,7 +47,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         end
         nextparticle = 1
         ##Loop to fill up new reference table
-        while (nextparticle <= N && simsdone<maxsims)
+        while (nextparticle <= M && simsdone<maxsims)
             ##Sample parameters from importance density
             if (firstit)
                 proppars = rand(abcinput.prior)
@@ -92,7 +92,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
             end
         end
         ##Stop if not all sims required to continue have been done (because simsdone==maxsims)
-        if nextparticle<=N
+        if nextparticle<=M
             continue
         end
         ##Update counters
@@ -118,20 +118,20 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         push!(dists, newdist)
         
         ##Calculate distances
-        distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
+        distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:M ]
         if !firstit
             oldoutput = copy(curroutput)
         end
-        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, M, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
         sortABCOutput!(curroutput)
         ##Calculate, store and use new threshold
-        newthreshold = curroutput.distances[k]
+        newthreshold = curroutput.distances[N]
         push!(thresholds, newthreshold)
-        curroutput.parameters = curroutput.parameters[:,1:k]
-        curroutput.sumstats = curroutput.sumstats[:,1:k]
-        curroutput.distances = curroutput.distances[1:k]
+        curroutput.parameters = curroutput.parameters[:,1:N]
+        curroutput.sumstats = curroutput.sumstats[:,1:N]
+        curroutput.distances = curroutput.distances[1:N]
         if firstit
-            curroutput.weights = ones(k)
+            curroutput.weights = ones(N)
         else
             curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
         end
@@ -142,9 +142,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         if !silent
             print("\n Iteration $itsdone, $simsdone sims done\n")
             if firstit
-                accrate = k/simsdone            
+                accrate = N/simsdone            
             else
-            accrate = k/(simsdone-cusims[itsdone-1])
+            accrate = N/(simsdone-cusims[itsdone-1])
             end
             @printf("Acceptance rate %.1e percent\n", 100*accrate)
             print("Output of most recent stage:\n")
@@ -156,10 +156,10 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     end
         
     ##Put results into ABCSMCOutput object
-    parameters = Array(Float64, (nparameters, k, itsdone))
-    sumstats = Array(Float64, (abcinput.nsumstats, k, itsdone))
-    distances = Array(Float64, (k, itsdone))
-    weights = Array(Float64, (k, itsdone))
+    parameters = Array(Float64, (nparameters, N, itsdone))
+    sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
+    distances = Array(Float64, (N, itsdone))
+    weights = Array(Float64, (N, itsdone))
     for i in 1:itsdone        
         parameters[:,:,i] = rejOutputs[i].parameters
         sumstats[:,:,i] = rejOutputs[i].sumstats

@@ -80,14 +80,14 @@ abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
 rejoutput = abcRejection(abcinput, 50000, 200) 
-smcoutput_nonadaptive = abcSMC(abcinput, 400, 1/2, 50000);
-smcoutput_adaptive = abcSMC(abcinput, 400, 1/2, 50000, adaptive=true);
+smcoutput_nonadaptive = abcSMC(abcinput, 200, 1/2, 50000);
+smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
 
 abcinput.abcdist = MahalanobisEmp(x0);
-smcoutput_adaptive_emp = abcSMC(abcinput, 400, 1/2, 50000, adaptive=true);
+smcoutput_adaptive_emp = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
 
 abcinput.abcdist = WeightedEuclidean(x0, "ADO");
-smcoutput_ADO = abcSMC(abcinput, 400, 1/2, 50000, 50000, adaptive=true);
+smcoutput_ADO = abcSMC(abcinput, 200, 1/2, 50000, 50000, adaptive=true);
 
 ##Look at accepted simulations
 s = smcoutput_nonadaptive
@@ -147,13 +147,13 @@ abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
 rejoutput = abcRejection(abcinput, 50000, 200)
-smcoutput_nonadaptive = abcSMC(abcinput, 400, 1/2, 50000);
-smcoutput_adaptive = abcSMC(abcinput, 400, 1/2, 50000, adaptive=true);
+smcoutput_nonadaptive = abcSMC(abcinput, 200, 1/2, 50000);
+smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
 ##smcoutput_nonadaptive = abcSMC(abcinput, 20000, 1/2, 1000000);
 ##smcoutput_adaptive = abcSMC(abcinput, 20000, 1/2, 1000000, adaptive=true);
 
 abcinput.abcdist = WeightedEuclidean(x0, "ADO");
-smcoutput_ADO = abcSMC(abcinput, 400, 1/2, 50000, adaptive=true);    
+smcoutput_ADO = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);    
 
 ##Look at accepted simulations
 s = rejoutput;
