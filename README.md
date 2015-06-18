@@ -59,7 +59,7 @@ Note `abcdist` must be a subtype of `ABCDistance`. Several options are defined i
 abcinput = ABCInput();
 abcinput.prior = GKPrior();
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.sobs = sobs;
 abcinput.nsumstats = 9;
 ```

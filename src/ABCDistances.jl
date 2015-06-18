@@ -6,7 +6,7 @@ using ProgressMeter
 import Base.show, Base.copy
 
 export
-  ABCDistance, Lp, Euclidean, Logdist, MahalanobisDiag, MahalanobisEmp, ##ABCDistance types
+  ABCDistance, Lp, Euclidean, Logdist, WeightedEuclidean, MahalanobisEmp, ##ABCDistance types
   init, evaldist, ##ABCDistance methods
   ABCInput, RefTable, ABCOutput, ABCRejOutput, ABCSMCOutput, ##General ABC types
   sortABCOutput!, show, copy, parameter_means, parameter_vars, parameter_covs, ##General ABC methods

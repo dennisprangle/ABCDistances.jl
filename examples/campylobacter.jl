@@ -45,7 +45,7 @@ sobs = [0.9310435, 10.0, 6.1, 296.0, 53.5853465, 5.5660606, 36.0, 18.0, 2.777777
 abcinput = ABCInput();
 abcinput.prior = CampyPrior();
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs, "ADO");
+abcinput.abcdist = WeightedEuclidean(sobs, "ADO");
 abcinput.sobs = sobs;
 abcinput.nsumstats = length(sobs);
 

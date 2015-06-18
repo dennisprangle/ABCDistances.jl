@@ -40,14 +40,14 @@ srand(1)
 abcinput = ABCInput();
 abcinput.prior = GKPrior();
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.sobs = sobs;
 abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-SMC
 smcoutput1 = abcSMC(abcinput, 3000, 1000, 1000000);
 smcoutput2 = abcSMC(abcinput, 3000, 1000, 1000000, adaptive=true);
-abcinput.abcdist = MahalanobisDiag(sobs, "ADO")
+abcinput.abcdist = WeightedEuclidean(sobs, "ADO")
 smcoutput3 = abcSMC(abcinput, 3000, 1000, 1000000, adaptive=true);
 
 ##Plot variances

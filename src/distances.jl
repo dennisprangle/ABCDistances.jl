@@ -45,12 +45,12 @@ function evaldist(x::Logdist, s::Array{Float64,1})
     exp(sum(log(absdiff)))
 end
 
-type MahalanobisDiag <: ABCDistance
+type WeightedEuclidean <: ABCDistance
     sobs::Array{Float64,1}
     w::Array{Float64,1} ##Weights for each summary statistic - square root of estimated precisions
     scale_type::String ##Whether to initialise scale using "MAD", "sd" or "ADO"
 
-    function MahalanobisDiag(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::String)
+    function WeightedEuclidean(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::String)
         if (scale_type ∉ ("MAD", "sd", "sdreg", "ADO"))
             error("scale_type must be MAD sd sdreg or ADO")
         end
@@ -59,15 +59,15 @@ type MahalanobisDiag <: ABCDistance
 end
 
 ##Leaves w undefined
-function MahalanobisDiag(sobs::Array{Float64, 1}, scale_type::String)
-    MahalanobisDiag(sobs, Array(Float64,0), scale_type)
+function WeightedEuclidean(sobs::Array{Float64, 1}, scale_type::String)
+    WeightedEuclidean(sobs, Array(Float64,0), scale_type)
 end
 
-function MahalanobisDiag(sobs::Array{Float64, 1})
-    MahalanobisDiag(sobs, Array(Float64,0), "MAD")
+function WeightedEuclidean(sobs::Array{Float64, 1})
+    WeightedEuclidean(sobs, Array(Float64,0), "MAD")
 end
 
-function init(x::MahalanobisDiag, sumstats::Array{Float64, 2}, parameters::Array{Float64, 2})
+function init(x::WeightedEuclidean, sumstats::Array{Float64, 2}, parameters::Array{Float64, 2})
     (nstats, nsims) = size(sumstats)
     if (nsims == 0)
         sig = ones(nstats)
@@ -87,7 +87,7 @@ function init(x::MahalanobisDiag, sumstats::Array{Float64, 2}, parameters::Array
     elseif x.scale_type=="ADO"
         sig = [ADO(vec(sumstats[i,:]), x.sobs[i]) for i in 1:nstats]
     end
-    return MahalanobisDiag(x.sobs, 1.0./sig, x.scale_type)
+    return WeightedEuclidean(x.sobs, 1.0./sig, x.scale_type)
 end
 
 ##Median absolute deviation
@@ -100,7 +100,7 @@ function ADO(x::Array{Float64, 1}, obs::Float64)
     median(abs(x - obs))
 end           
 
-function evaldist(x::MahalanobisDiag, s::Array{Float64, 1})
+function evaldist(x::WeightedEuclidean, s::Array{Float64, 1})
     absdiff = abs(x.sobs - s)
     norm(absdiff .* x.w, 2.0)
 end

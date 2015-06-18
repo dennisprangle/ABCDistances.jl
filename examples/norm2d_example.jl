@@ -38,7 +38,7 @@ sobs = [0.0,0.0];
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
@@ -112,7 +112,7 @@ sobs = [0.0,0.0]
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
@@ -155,7 +155,7 @@ sobs = [0.0,3.0];
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
@@ -164,7 +164,7 @@ srand(20);
 smcoutput5 = abcSMC(abcinput, 2000, 1000, 250000, store_init=true);
 srand(20);
 smcoutput6 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
-abcinput.abcdist = MahalanobisDiag(sobs, "ADO");
+abcinput.abcdist = WeightedEuclidean(sobs, "ADO");
 srand(20);
 smcoutput7 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
 

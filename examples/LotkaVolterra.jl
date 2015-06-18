@@ -75,7 +75,7 @@ end
 abcinput = ABCInput();
 abcinput.prior = LVprior();
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(x0)
+abcinput.abcdist = WeightedEuclidean(x0)
 abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
@@ -86,7 +86,7 @@ smcoutput_adaptive = abcSMC(abcinput, 400, 200, 50000, adaptive=true);
 abcinput.abcdist = MahalanobisEmp(x0);
 smcoutput_adaptive_emp = abcSMC(abcinput, 400, 200, 50000, adaptive=true);
 
-abcinput.abcdist = MahalanobisDiag(x0, "ADO");
+abcinput.abcdist = WeightedEuclidean(x0, "ADO");
 smcoutput_ADO = abcSMC(abcinput, 400, 200, 50000, 50000, adaptive=true);
 
 ##Look at accepted simulations
@@ -142,7 +142,7 @@ end
 abcinput = ABCInput();
 abcinput.prior = LVprior2();
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(x0);
+abcinput.abcdist = WeightedEuclidean(x0);
 abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
@@ -152,7 +152,7 @@ smcoutput_adaptive = abcSMC(abcinput, 400, 200, 50000, adaptive=true);
 ##smcoutput_nonadaptive = abcSMC(abcinput, 20000, 10000, 1000000);
 ##smcoutput_adaptive = abcSMC(abcinput, 20000, 10000, 1000000, adaptive=true);
 
-abcinput.abcdist = MahalanobisDiag(x0, "ADO");
+abcinput.abcdist = WeightedEuclidean(x0, "ADO");
 smcoutput_ADO = abcSMC(abcinput, 400, 200, 50000, adaptive=true);    
 
 ##Look at accepted simulations
