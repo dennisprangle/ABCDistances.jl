@@ -5,8 +5,11 @@
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
 ##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
-function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false)
-    prog = Progress(maxsims, 1) ##Progress meter
+##silent - if true no status messages are returned
+function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
+    if !silent
+        prog = Progress(maxsims, 1) ##Progress meter
+    end
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0
@@ -58,7 +61,9 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
             ##Draw summaries
             (success, propstats) = abcinput.sample_sumstats(proppars)
             simsdone += 1
-            next!(prog)
+            if !silent
+                next!(prog)
+            end
             if (!success)
                 ##If rejection occurred during simulation
                 continue
@@ -133,16 +138,18 @@ function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, ns
         ##Record output
         push!(rejOutputs, curroutput)
         ##Report status
-        print("Iteration $itsdone, $simsdone sims done\n")
-        if firstit
-            accrate = k/simsdone            
-        else
+        if !silent
+            print("Iteration $itsdone, $simsdone sims done\n")
+            if firstit
+                accrate = k/simsdone            
+            else
             accrate = k/(simsdone-cusims[itsdone-1])
+            end
+            @printf("Acceptance rate %.1e percent\n", 100*accrate)
+            print("Output of most recent stage:\n")
+            print(curroutput)
+            ##TO DO: make some plots as well?
         end
-        @printf("Acceptance rate %.1e percent\n", 100*accrate)
-        print("Output of most recent stage:\n")
-        print(curroutput)
-        ##TO DO: make some plots as well?
         ##TO DO: consider alternative stopping conditions? (e.g. zero threshold reached)
         firstit = false
     end
