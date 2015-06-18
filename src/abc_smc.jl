@@ -1,15 +1,16 @@
-##k is how many particles to use
 ##N is how many acceptances to require at each iteration
+##α is proportion of particles to keep
 ##maxsims - the algorithm will stop once this many simulations have been performed
 ##nsims_for_init - how many simulations to store to initialise the distance function
 ##adaptive - whether to use the adaptive or non-adaptive algorithm
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
 ##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
 ##silent - if true no status messages are returned
-function abcSMC(abcinput::ABCInput, N::Integer, k::Integer, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
+function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
+    k::Int32 = ceil(N*α)
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0

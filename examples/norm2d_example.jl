@@ -44,9 +44,9 @@ abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
 srand(20);
-smcoutput1 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
+smcoutput1 = abcSMC(abcinput, 2000, 1/2, 50000, store_init=true);
 srand(20);
-smcoutput2 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+smcoutput2 = abcSMC(abcinput, 2000, 1/2, 50000, adaptive=true, store_init=true);
 
 ##Look at weights
 smcoutput1.abcdists[1].w
@@ -118,8 +118,8 @@ abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
 srand(20)
-smcoutput3 = abcSMC(abcinput, 2000, 1000, 50000, store_init=true);
-smcoutput4 = abcSMC(abcinput, 2000, 1000, 50000, adaptive=true, store_init=true);
+smcoutput3 = abcSMC(abcinput, 2000, 1/2, 50000, store_init=true);
+smcoutput4 = abcSMC(abcinput, 2000, 1/2, 50000, adaptive=true, store_init=true);
 
 nits = min(smcoutput3.niterations, smcoutput4.niterations)
 PyPlot.figure()
@@ -161,12 +161,12 @@ abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC
 srand(20);
-smcoutput5 = abcSMC(abcinput, 2000, 1000, 250000, store_init=true);
+smcoutput5 = abcSMC(abcinput, 2000, 1/2, 250000, store_init=true);
 srand(20);
-smcoutput6 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
+smcoutput6 = abcSMC(abcinput, 2000, 1/2, 250000, adaptive=true, store_init=true);
 abcinput.abcdist = WeightedEuclidean(sobs, "ADO");
 srand(20);
-smcoutput7 = abcSMC(abcinput, 2000, 1000, 250000, adaptive=true, store_init=true);
+smcoutput7 = abcSMC(abcinput, 2000, 1/2, 250000, adaptive=true, store_init=true);
 
 nits = min(smcoutput5.niterations, smcoutput6.niterations, smcoutput7.niterations)
 PyPlot.figure(figsize=(12,12))
