@@ -98,7 +98,7 @@ end
 ##Sort output into distance order
 function sortABCOutput!(out::ABCRejOutput)
     ##Sort results into closeness order
-    closenessorder = sortperm(out.distances)
+    closenessorder = sortperm(out.distances) ##nb This uses the default algorithm mergesort which leaves ties in the original order
     out.parameters = out.parameters[:,closenessorder]
     out.sumstats = out.sumstats[:,closenessorder]
     out.distances = out.distances[closenessorder]
