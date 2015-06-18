@@ -121,9 +121,9 @@ PyPlot.savefig("gk_weights.pdf")
 ###############################
 ndatasets = 5;
 trueθs = zeros((4, ndatasets));
-RMSEs = zeros((4, 2, ndatasets)); ## parameters x method x dataset
-vars =  zeros((4, 2, ndatasets,));
-squaredbiases = zeros((4, 2, ndatasets));
+RMSEs = zeros((4, 3, ndatasets)); ## parameters x method x dataset
+vars =  zeros((4, 3, ndatasets,));
+squaredbiases = zeros((4, 3, ndatasets));
 
 ##Returns squared bias, variance and RMSE of weighted posterior sample wrt true parameters
 function getError(s::ABCSMCOutput, pobs::Array{Float64, 1})
@@ -146,7 +146,7 @@ abcinput.nsumstats = length(quantiles);
 srand(1);
 for i in 1:ndatasets
     if i==1
-        prog = Progress(2*ndatasets, 1) ##Progress meter
+        prog = Progress(3*ndatasets, 1) ##Progress meter
     end
     theta0 = rand(GKPrior())
     (success, sobs) = sample_sumstats(theta0)
@@ -156,9 +156,12 @@ for i in 1:ndatasets
     next!(prog)
     smcoutput2 = abcSMC(abcinput, 3000, 1/3, 1000000, adaptive=true, silent=true)
     next!(prog)
+    smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000, silent=true)
+    next!(prog)
     trueθs[:,i] = theta0
     (squaredbiases[:,1,i], vars[:,1,i], RMSEs[:,1,i]) = getError(smcoutput1, theta0)
     (squaredbiases[:,2,i], vars[:,2,i], RMSEs[:,2,i]) = getError(smcoutput2, theta0)
+    (squaredbiases[:,3,i], vars[:,3,i], RMSEs[:,3,i]) = getError(smcoutput3, theta0)
 end
 
 ##Summarise output
