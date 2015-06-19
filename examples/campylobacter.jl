@@ -1,6 +1,7 @@
 using ABCDistances
 using Distributions
 using Rif
+using StatsBase
 import Distributions.length, Distributions._rand!, Distributions._logpdf ##So that these can be extended
 using PyPlot
 
@@ -54,11 +55,66 @@ abcinput.nsumstats = length(sobs);
 smcoutput1 = abcSMC(abcinput, 1000, 2/3, 15000, adaptive=true, diag_perturb=true);
 
 ##Inspect output weights
-[smcoutput1.abcdists[i].w for i in 1:smcoutput1.niterations]
+hcat([smcoutput1.abcdists[i].w for i in 1:smcoutput1.niterations]...)
+##They do change but not dramatically
 
-##Plot output sample
+##Look at lengths of acceptance region ellipse axes
+hcat([smcoutput1.thresholds[i] ./ smcoutput1.abcdists[i].w for i in 1:smcoutput1.niterations]...)
+
+##Plot output samples
 PyPlot.figure()
-for it in 1:2, par in 1:3
-    PyPlot.subplot(230+3*(it-1)+par)
-    PyPlot.hist(vec(smcoutput1.parameters[par,:,it]))
+for it in 1:4, par in 1:3
+    PyPlot.subplot(1,3,par)
+    z = sample(vec(smcoutput1.parameters[par,:,it]), StatsBase.WeightVec(smcoutput1.weights[:,it]), 1000)
+    PyPlot.hist(z)
+end 
+
+file=open("julia_smc_out1.dat", "w");
+serialize(file, smcoutput1);
+close(file);
+     
+##ABC WITH SEMI-AUTO SUMMARY STATISTICS
+B=readdlm("semiauto_coeffs.txt");
+    
+##Code to sample from model and return semi-auto summary statistics using R
+function sample_semiauto_sumstats(pars::Array{Float64,1})
+    success = true
+    rout = r_campy.simS(pars[1], pars[2], pars[3], 0.0, 1)
+    features = [1, rout...]
+    (success, B'*features)
 end
+
+semiauto_obs = B'*[1, sobs]
+  
+semiauto_abcinput = ABCInput();
+semiauto_abcinput.prior = CampyPrior();
+semiauto_abcinput.sample_sumstats = sample_semiauto_sumstats;
+semiauto_abcinput.abcdist = MahalanobisDiag(semiauto_obs, "ADO");
+semiauto_abcinput.sobs = semiauto_obs;
+semiauto_abcinput.nsumstats = length(semiauto_obs);
+
+##Perform ABC-SMC
+semiauto_output = abcSMC(semiauto_abcinput, 1500, 750, 30000, adaptive=true);
+
+##Inspect output weights
+hcat([semiauto_output.abcdists[i].w for i in 1:semiauto_output.niterations]...)
+##They do change but not dramatically
+
+##Look at lengths of acceptance region ellipse axes
+hcat([semiauto_output.thresholds[i] ./ semiauto_output.abcdists[i].w for i in 1:semiauto_output.niterations]...)
+
+##Plot output samples
+PyPlot.figure()
+for it in 1:semiauto_output.niterations, par in 1:3
+    PyPlot.subplot(1,3,par)
+    z = sample(vec(semiauto_output.parameters[par,:,it]), StatsBase.WeightVec(semiauto_output.weights[:,it]), 1000)
+    PyPlot.hist(z, alpha=0.5, normed=true, range=extrema(semiauto_output.parameters[par,:,1]), bins=20)
+end 
+
+PyPlot.figure()
+for it in 1:semiauto_output.niterations, par in 1:3
+    PyPlot.subplot(semiauto_output.niterations,3,par+3(it-1))
+    PyPlot.hist(vec(semiauto_output.parameters[par,:,it]), range=extrema(semiauto_output.parameters[par,:,1]), weights=vec(semiauto_output.weights[:,it]), bins=25, normed=true)
+    PyPlot.xlim(extrema(semiauto_output.parameters[par,:,1]))
+    PyPlot.ylim([0.0, (0.35,0.35,3.5)[par]])
+end 
