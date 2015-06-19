@@ -89,19 +89,31 @@ smcoutput_adaptive_emp = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
 abcinput.abcdist = WeightedEuclidean(x0, "ADO");
 smcoutput_ADO = abcSMC(abcinput, 200, 1/2, 50000, 50000, adaptive=true);
 
-##Look at accepted simulations
-s = smcoutput_nonadaptive
-for it in (1,5,11)
-    PyPlot.figure()
-    PyPlot.subplot(121)
+##Look at accepted simulations in final iteration
+outputs = [smcoutput_nonadaptive, smcoutput_adaptive];
+PyPlot.figure();
+plotcounter = 1;
+for s in outputs    
+    PyPlot.subplot(length(outputs), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(s.sumstats[1:17,i,it]))
+        plot(obs_times, vec(s.sumstats[1:17,i,s.niterations]))
     end
-    PyPlot.subplot(122)
-    for i in 1:200
-        plot(obs_times, vec(s.sumstats[18:34,i,it]))
+    plot(obs_times, x0[1:17], "o")
+    plotcounter += 1
+    PyPlot.subplot(length(outputs), 2, plotcounter)
+    for i in 1:20
+        plot(obs_times, vec(s.sumstats[18:34,i,s.niterations]))
     end
+    plot(obs_times, x0[18:34], "o")
+    plotcounter += 1
 end
+
+##Look at weights
+normw(x) = x ./ sum(x);
+PyPlot.figure();
+plot(1:34, normw(smcoutput_nonadaptive.abcdists[1].w), "b-o");
+plot(1:34, normw(smcoutput_adaptive.abcdists[5].w), "b-x");
+plot(1:34, normw(smcoutput_adaptive.abcdists[smcoutput_adaptive.niterations].w), "b-^");
     
 ################################
 ##Now do ABC with initial state and σ also unknown
