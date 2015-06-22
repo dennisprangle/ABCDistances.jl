@@ -57,7 +57,7 @@ smcoutput1 = abcSMC(abcinput, 1000, 1/3, 1000000);
 smcoutput2 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
 smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000);
 
-##Plot variances
+##Plot MSEs (and also bias^2, variance)
 b1 = parameter_means(smcoutput1);
 b2 = parameter_means(smcoutput2);
 b3 = parameter_means(smcoutput3);
@@ -71,17 +71,27 @@ PyPlot.figure(figsize=(12,12))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c1, vec(log10(v1[i,:])), "b-o")
+    PyPlot.plot(c3, vec(log10(v3[i,:] .+ (b3[i,:]-theta0[i]).^2)), "b-o")
+    PyPlot.plot(c2, vec(log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2)), "g-^")
+    PyPlot.title(pnames[i])
+    PyPlot.xlabel("Number of simulations (000s)")
+    PyPlot.ylabel("log₁₀(MSE)")
+    PyPlot.legend(["Non-adaptive (algorithm 2)","Adaptive (algorithm 3)"])
+end
+PyPlot.tight_layout();
+PyPlot.savefig("gk_mse.pdf")
+
+for i in 1:4
+    PyPlot.subplot(220+i)
+    PyPlot.plot(c1, vec(log10(v1[i,:])), "r-x")
     PyPlot.plot(c2, vec(log10(v2[i,:])), "g-^")
-    PyPlot.plot(c3, vec(log10(v3[i,:])), "r-x")
+    PyPlot.plot(c3, vec(log10(v3[i,:])), "b-o")
     PyPlot.axis([0,maximum([c1,c2,c3]),-4,1]);
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(estimated variance)")
     PyPlot.legend(["Non-adaptive (alg 3)","Adaptive (alg 3)","Non-adaptive (alg 2)"])
 end
-PyPlot.tight_layout();
-PyPlot.savefig("gk_var.pdf")
 
 PyPlot.figure()
 for i in 1:4
@@ -105,13 +115,12 @@ w3 = smcoutput3.abcdists[1].w;
 
 ##Plot weights
 PyPlot.figure(figsize=(9,3))
-wfirst = vec(w2[1,:])
-PyPlot.plot(quantiles, wfirst/sum(wfirst), "-o")
+PyPlot.plot(quantiles, w3/sum(w3), "-o")
 wlast = vec(w2[smcoutput2.niterations, :])
 PyPlot.plot(quantiles, wlast/sum(wlast), "-^")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
-PyPlot.legend(["First iteration","Last iteration"])
-PyPlot.xlabel("Order statistic (000s)")
+PyPlot.legend(["Algorithm 2","Algorithm 3\n(last iteration)"])
+PyPlot.xlabel("Order statistic")
 PyPlot.ylabel("Relative weight")
 PyPlot.tight_layout();
 PyPlot.savefig("gk_weights.pdf")
@@ -119,7 +128,7 @@ PyPlot.savefig("gk_weights.pdf")
 ###############################
 ##ANALYSIS OF MULTIPLE DATASETS
 ###############################
-ndatasets = 5;
+ndatasets = 100;
 trueθs = zeros((4, ndatasets));
 RMSEs = zeros((4, 3, ndatasets)); ## parameters x method x dataset
 vars =  zeros((4, 3, ndatasets,));
@@ -168,3 +177,8 @@ end
 mean(RMSEs, 3)
 mean(vars, 3)
 mean(squaredbiases, 3)
+
+writedlm("gk_RMSE.txt", RMSEs)
+writedlm("gk_vars.txt", vars)
+writedlm("gk_bias2.txt", squaredbiases)
+writedlm("gk_thetas.txt", trueθs)
