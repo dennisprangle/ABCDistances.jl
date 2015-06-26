@@ -215,10 +215,15 @@ function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::
     weights ./ sum(weights)
 end
 
-##Version of algorithm in which h updated at end of iteration
-##Included so comparisons can be made in the paper
-##TO DO: sort out code repetition with abcSMC somehow (make some common bits into functions?)
-function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; store_init=false, diag_perturb=false, silent=false)
+##Standard ABC SMC
+##Included so comparisons can be made in the paper  
+##Distance is not updated, but can be set at end of 1st iteration (if initialise_dist is true)
+##The initial value of h can be specified by h1 argument (but not if initialise_dist is true)
+##TO DO: maybe sort out code overlap repetition with abcSMC function
+function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; initialise_dist=true, store_init=false, diag_perturb=false, silent=false, h1=Inf)
+    if initialise_dist && h1<Inf
+        error("To initialise distance during the algorithm the first threshold must be Inf")
+    end
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
@@ -229,8 +234,8 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
     firstit = true
     ##We record a sequence of distances and thresholds
     ##(all distances the same but we record a sequence for consistency with other algorithm)
-    dists = ABCDistance[]
-    thresholds = Float64[Inf]
+    dists = ABCDistance[abcinput.abcdist]
+    thresholds = Float64[h1]
     rejOutputs = ABCRejOutput[]
     cusims = Int32[]
     ##Main loop
@@ -281,13 +286,13 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
                 ##If rejection occurred during simulation
                 continue
             end
-            if ((firstit || store_init) && successes_thisit < nsims_for_init)
+            if (((firstit && initialise_dist) || store_init) && successes_thisit < nsims_for_init)
                 successes_thisit += 1
                 sumstats_forinit[:,successes_thisit] = propstats
                 pars_forinit[:,successes_thisit] = proppars
             end
-            if (firstit)
-                ##No rejection at this stage in first iteration
+            if (firstit && initialise_dist)
+                ##No rejection at this stage in first iteration if we want to initialise distance
                 accept = true
             else
                 ##Accept if distance less than current threshold
@@ -308,19 +313,24 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         itsdone += 1
         push!(cusims, simsdone)
         ##Trim pars_forinit and sumstats_forinit to correct size
-        if (firstit || store_init)
+        if ((firstit && initialise_dist) || store_init)
             if (successes_thisit < nsims_for_init)
                 sumstats_forinit = sumstats_forinit[:,1:successes_thisit]
                 pars_forinit = pars_forinit[:,1:successes_thisit]
             end
         end
         ##Create new distance if needed
-        if (firstit)
-            newdist = init(abcinput.abcdist, sumstats_forinit, pars_forinit)
+        if (firstit && initialise_dist)
+            newdist = init(dists1, sumstats_forinit, pars_forinit)
         else
             newdist = dists[1]
         end
-        push!(dists, newdist)
+        ##Store new distance
+        if (firstit)
+            dists[1] = newdist
+        else
+            push!(dists, newdist)
+        end
         
         ##Calculate distances
         distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
