@@ -321,7 +321,7 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         end
         ##Create new distance if needed
         if (firstit && initialise_dist)
-            newdist = init(dists1, sumstats_forinit, pars_forinit)
+            newdist = init(dists[1], sumstats_forinit, pars_forinit)
         else
             newdist = dists[1]
         end
