@@ -39,7 +39,6 @@ abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
 abcinput.sample_sumstats = sample_sumstats;
 abcinput.abcdist = WeightedEuclidean(sobs);
-abcinput.sobs = sobs;
 abcinput.nsumstats = 2;
 
 ##Perform ABC-SMC

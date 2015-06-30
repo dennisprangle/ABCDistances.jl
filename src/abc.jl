@@ -11,7 +11,6 @@ type ABCInput
     prior::Union(DiscreteMultivariateDistribution, ContinuousMultivariateDistribution)
     sample_sumstats::Function
     abcdist::ABCDistance
-    sobs::Array{Float64, 1} ##TO DO: this is now part of abcdist so no need for it to be here any more
     nsumstats::Int32    
 end
 
@@ -60,7 +59,6 @@ function ABCInput()
     ABCInput(MvNormal(1, 1.0),  ##prior
              (x)->rand(1),       ##sample_sumstats draws from U(0,1) independent of parameters
              Euclidean([1.0]),  ##abcdist
-             [1.0],              ##sobs
              1)                  ##nsumstats
 end
 

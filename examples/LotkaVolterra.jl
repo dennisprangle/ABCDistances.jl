@@ -78,7 +78,6 @@ abcinput = ABCInput();
 abcinput.prior = LVprior();
 abcinput.sample_sumstats = sample_sumstats;
 abcinput.abcdist = WeightedEuclidean(x0)
-abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
 srand(1);

@@ -49,7 +49,6 @@ abcinput = ABCInput();
 abcinput.prior = GKPrior();
 abcinput.sample_sumstats = sample_sumstats;
 abcinput.abcdist = WeightedEuclidean(sobs);
-abcinput.sobs = sobs;
 abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-SMC
