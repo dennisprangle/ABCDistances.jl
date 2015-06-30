@@ -67,7 +67,7 @@ v3 = parameter_vars(smcoutput3);
 c1 = smcoutput1.cusims ./ 1000;
 c2 = smcoutput2.cusims ./ 1000;
 c3 = smcoutput3.cusims ./ 1000;
-PyPlot.figure(figsize=(12,12))
+PyPlot.figure(figsize=(12,8))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
@@ -76,7 +76,7 @@ for i in 1:4
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
-    PyPlot.legend(["Non-adaptive (algorithm 2)","Adaptive (algorithm 3)"])
+    PyPlot.legend(["Algorithm 3","Algorithm 4"])
 end
 PyPlot.tight_layout();
 PyPlot.savefig("gk_mse.pdf")
@@ -90,7 +90,7 @@ for i in 1:4
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(estimated variance)")
-    PyPlot.legend(["Non-adaptive (alg 3)","Adaptive (alg 3)","Non-adaptive (alg 2)"])
+    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 4)","Non-adaptive (alg 3)"])
 end
 
 PyPlot.figure()
@@ -102,7 +102,7 @@ for i in 1:4
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(bias squared)")
-    PyPlot.legend(["Non-adaptive (alg 3)","Adaptive (alg 3)","Non-adaptive (alg 2)"])
+    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 4)","Non-adaptive (alg 3)"])
 end
 
 ##Compute weights
@@ -114,12 +114,12 @@ end
 w3 = smcoutput3.abcdists[1].w;
 
 ##Plot weights
-PyPlot.figure(figsize=(9,3))
+PyPlot.figure(figsize=(12,4))
 PyPlot.plot(quantiles, w3/sum(w3), "-o")
 wlast = vec(w2[smcoutput2.niterations, :])
 PyPlot.plot(quantiles, wlast/sum(wlast), "-^")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
-PyPlot.legend(["Algorithm 2","Algorithm 3\n(last iteration)"])
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"])
 PyPlot.xlabel("Order statistic")
 PyPlot.ylabel("Relative weight")
 PyPlot.tight_layout();

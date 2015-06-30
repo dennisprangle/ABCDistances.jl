@@ -36,7 +36,8 @@ nobs = 2*length(obs_times)
 x0 = vec(LV_obs') + σ0*randn(nobs); ##Noisy observations
 
 ####################################
-##ABC WITH INITIAL STATE AND σ KNOWN
+##ABC ON A SINGLE DATASET
+##nb initial state and σ known
 ##(parameters are the log rates)
 ####################################
 ##Define prior
@@ -63,10 +64,11 @@ end
 
 ##Define model
 function sample_sumstats(pars::Array{Float64,1})
+    ##TO DO: IS UPPER LIMIT ON SIMS EVER REACHED?
     (success, x) = gillespie_partial_sim(stoichiometry_LV, state0, exp(pars), obs_times, 100000)
     if (success)
         stats = vec(x') + σ0*randn(nobs)
-    else
+    else        
         stats = zeros(x)
     end
     (success, stats)
@@ -79,124 +81,96 @@ abcinput.abcdist = WeightedEuclidean(x0)
 abcinput.sobs = x0;
 abcinput.nsumstats = nobs;
 
-rejoutput = abcRejection(abcinput, 50000, 200) 
-smcoutput_nonadaptive = abcSMC(abcinput, 200, 1/2, 50000);
-smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
+srand(1);
+smcoutput_nonadaptive = abcSMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
+smcoutput_nonadaptive2 = abcSMC(abcinput, 200, 1/2, 50000);
+smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
 
-abcinput.abcdist = MahalanobisEmp(x0);
-smcoutput_adaptive_emp = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
+##Plot weights
+w1 = smcoutput_nonadaptive.abcdists[1].w;
+w2 = smcoutput_adaptive.abcdists[smcoutput_adaptive.niterations].w;
+PyPlot.figure(figsize=(12,6));
+PyPlot.subplot(121);
+plot(obs_times, w1[1:17]/sum(w1), "b-o");
+plot(obs_times, w2[1:17]/sum(w2), "g-^");
+PyPlot.ylim([0.,0.18])
+PyPlot.xlabel("Time");
+PyPlot.ylabel("Relative weight");
+PyPlot.title("Prey");
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"]);
+PyPlot.subplot(122);
+plot(obs_times, w1[18:34]/sum(w2), "b-o");
+plot(obs_times, w2[18:34]/sum(w2), "g-^");
+PyPlot.ylim([0.,0.18])
+PyPlot.ylabel("Relative weight");
+PyPlot.xlabel("Time");
+PyPlot.title("Predators");
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"]);
+PyPlot.tight_layout();
+PyPlot.savefig("LV_weights.pdf");
 
-abcinput.abcdist = WeightedEuclidean(x0, "ADO");
-smcoutput_ADO = abcSMC(abcinput, 200, 1/2, 50000, 50000, adaptive=true);
+##Plot MSEs
+outputs = (smcoutput_nonadaptive, smcoutput_adaptive);
+pnames = ("Prey growth", "Predation", "Predator death");
+leg_code = ("b-o", "g-^");
+PyPlot.figure(figsize=(12,6))
+for i in 1:length(outputs)
+    s = outputs[i]
+    m = parameter_means(s)
+    v = parameter_vars(s)
+    c = s.cusims ./ 1000;
+    for j in 1:3
+        PyPlot.subplot(1, 3, j)
+        PyPlot.plot(c, vec(log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2)), leg_code[i])
+    end
+end
+for i in 1:3
+    PyPlot.subplot(1, 3, i)
+    PyPlot.title(pnames[i])
+    PyPlot.xlabel("Number of simulations (000s)")
+    PyPlot.ylabel("log₁₀(MSE)")
+    PyPlot.legend(["Algorithm 3", "Algorithm 4"])
+end
+PyPlot.tight_layout();
+PyPlot.savefig("LV_mse.pdf");
 
-##Look at accepted simulations in final iteration
-outputs = [smcoutput_nonadaptive, smcoutput_adaptive];
-PyPlot.figure();
+##Simulations used for distance initialisation
+ss_toplot = Array[smcoutput_nonadaptive.init_sims[1],
+                  smcoutput_adaptive.init_sims[smcoutput_adaptive.niterations]];
+ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)"];             
+PyPlot.figure(figsize=(12,12));
 plotcounter = 1;
-for s in outputs    
-    PyPlot.subplot(length(outputs), 2, plotcounter)
+for ss in ss_toplot    
+    PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(s.sumstats[1:17,i,s.niterations]))
+        plot(obs_times, vec(ss[1:17,i]))
     end
-    plot(obs_times, x0[1:17], "o")
+    plot(obs_times, x0[1:17], "ko", markersize=5)
+    PyPlot.ylim([0,800])
     plotcounter += 1
-    PyPlot.subplot(length(outputs), 2, plotcounter)
+    PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(s.sumstats[18:34,i,s.niterations]))
+        plot(obs_times, vec(ss[18:34,i]))
     end
-    plot(obs_times, x0[18:34], "o")
+    plot(obs_times, x0[18:34], "ko", markersize=5)
+    PyPlot.ylim([0,800])
     plotcounter += 1
 end
-
-##Look at weights
-normw(x) = x ./ sum(x);
-PyPlot.figure();
-plot(1:34, normw(smcoutput_nonadaptive.abcdists[1].w), "b-o");
-plot(1:34, normw(smcoutput_adaptive.abcdists[5].w), "b-x");
-plot(1:34, normw(smcoutput_adaptive.abcdists[smcoutput_adaptive.niterations].w), "b-^");
-    
-################################
-##Now do ABC with initial state and σ also unknown
-################################
-marg_rate_prior = Uniform(-6.0,2.0)
-log_sig_prior = Uniform(log(0.5),log(50.0))
-prey_prior = Poisson(50)
-predator_prior = Poisson(100)
-
-type LVprior2 <: ContinuousMultivariateDistribution
+PyPlot.subplot(length(ss_toplot), 2, 1)
+PyPlot.title("Prey");
+PyPlot.subplot(length(ss_toplot), 2, 2)
+PyPlot.title("Predators");
+PyPlot.subplot(length(ss_toplot), 2, 2*length(ss_toplot)-1)
+PyPlot.xlabel("Time");
+PyPlot.subplot(length(ss_toplot), 2, 2*length(ss_toplot))
+PyPlot.xlabel("Time");
+for i in 1:length(ss_toplot)
+    PyPlot.subplot(length(ss_toplot), 2, 2i-1)
+    PyPlot.ylabel("Population")
+    line_invis = plot((0,0),(0,0),"w-")
+    PyPlot.legend([line_invis], [ss_names[i]], handlelength=0)
+    PyPlot.subplot(length(ss_toplot), 2, 2i)
+    PyPlot.legend([line_invis], [ss_names[i]], handlelength=0)
 end
-
-function length(d::LVprior2)
-    6
-end
-
-function _rand!{T<:Real}(d::LVprior2, x::AbstractVector{T})
-    x = [rand(marg_rate_prior, 3), rand(log_sig_prior), rand(prey_prior), rand(predator_prior)]
-end
-
-function _pdf{T<:Real}(d::LVprior2, x::AbstractVector{T})
-    ##n.b. initial state parameters - x[5], x[6] - are discretised to cope with SMC code adding continuous perturbations. TO DO: perturb discrete parameters more appropriately
-    prod(pdf(marg_rate_prior, x[1:3])) * pdf(log_sig_prior, x[4]) * pdf(prey_prior, round(x[5])) * pdf(predator_prior, round(x[6]))
-end
-
-function sample_sumstats(pars::Array{Float64,1})
-    init_state = convert(Array{Int32, 1}, round(pars[5:6]))
-    (success, x) = gillespie_partial_sim(stoichiometry_LV, init_state, exp(pars[1:3]), obs_times, 100000)
-    σ = exp(pars[4])
-    if (success)
-        stats = vec(x') + σ*randn(nobs)
-    else
-        stats = zeros(x)
-    end
-    (success, stats)
-end
-
-abcinput = ABCInput();
-abcinput.prior = LVprior2();
-abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = WeightedEuclidean(x0);
-abcinput.sobs = x0;
-abcinput.nsumstats = nobs;
-
-rejoutput = abcRejection(abcinput, 50000, 200)
-smcoutput_nonadaptive = abcSMC(abcinput, 200, 1/2, 50000);
-smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);
-##smcoutput_nonadaptive = abcSMC(abcinput, 20000, 1/2, 1000000);
-##smcoutput_adaptive = abcSMC(abcinput, 20000, 1/2, 1000000, adaptive=true);
-
-abcinput.abcdist = WeightedEuclidean(x0, "ADO");
-smcoutput_ADO = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true);    
-
-##Look at accepted simulations
-s = rejoutput;
-PyPlot.figure()
-PyPlot.subplot(121)
-for i in 1:200
-    plot(obs_times, vec(s.sumstats[1:17,i]))
-end
-PyPlot.subplot(122)
-for i in 1:200
-    plot(obs_times, vec(s.sumstats[18:34,i]))
-end
-
-s = smcoutput_ADO;
-for it in (1,2,3)    
-    PyPlot.figure()
-    PyPlot.subplot(121)
-    for i in 1:20
-        plot(obs_times, vec(s.sumstats[1:17,i,it]))
-    end
-    plot(obs_times, vec(LV_obs[1,:]), "-o")
-    PyPlot.subplot(122)
-    for i in 1:200
-        plot(obs_times, vec(s.sumstats[18:34,i,it]))
-    end
-    plot(obs_times, vec(LV_obs[2,:]), "-o")
-end
-
-##NB IN THIS EXAMPLE ABC CONCENTRATES ON THE WRONG SUMMARY STATISTICS. E.G. ADO FOCUSES ON THE LATER STAGES OF THE PREDATOR POPULATION. INFORMATIVE SUMMARY STATISTICS WOULD BE VERY DESIRABLE HERE!
-##This is illustrated by the following plot. This shows the length of each axis of the acceptance ellipse at each iteration.
-PyPlot.figure()
-for (i in 1:s.niterations)
-    plot(s.thresholds[i] ./ s.abcdists[i].w)
-end
+PyPlot.tight_layout();
+PyPlot.savefig("LV_paths.pdf");

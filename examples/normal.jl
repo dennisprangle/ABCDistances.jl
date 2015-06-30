@@ -66,39 +66,42 @@ for i in 1:nits
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Non-adaptive simulations")
+PyPlot.title("Algorithm 2 simulations")
 PyPlot.subplot(222)
 for i in 1:nits
     plot_init(smcoutput_adapt, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$") 
-PyPlot.title("Adaptive simulations")
+PyPlot.title("Algorithm 4 simulations")
 PyPlot.subplot(223)
 for i in 1:nits
     plot_acc(smcoutput_noadapt, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Non-adaptive acceptance regions")
+PyPlot.title("Algorithm 2 acceptance regions")
 PyPlot.subplot(224)
 for i in 1:nits
     plot_acc(smcoutput_adapt, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Adaptive acceptance regions")
+PyPlot.title("Algorithm 4 acceptance regions")
 PyPlot.tight_layout()
 PyPlot.savefig("normal_acc_regions.pdf")
 
-##Plot RMSEs
-PyPlot.figure(figsize=(9,3))
-RMSE1 = [ sqrt(sum(smcoutput_noadapt.parameters[1,:,i].^2)) for i in 1:nits ]
-RMSE2 = [ sqrt(sum(smcoutput_adapt.parameters[1,:,i].^2)) for i in 1:nits ]   
-plot(smcoutput_noadapt.cusims[1:nits], RMSE1, "r-o")
-plot(smcoutput_adapt.cusims[1:nits], RMSE2, "b-x")
-xlabel("Simulations")
-ylabel("RMSE")
-legend(["Algorithm 2 (non-adaptive)","Algorithm 3 (adaptive)"])
-PyPlot.tight_layout()
-PyPlot.savefig("normal_RMSE.pdf")
+##Plot MSEs
+get_mses(p, w) = sum(p.^2.*w) / sum(w)
+s1 = smcoutput_noadapt;
+s2 = smcoutput_adapt;
+MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:nits];
+MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:nits];
+PyPlot.figure(figsize=(12,3));
+plot(smcoutput_noadapt.cusims[1:nits], log10(MSE1), "b-o");
+plot(smcoutput_adapt.cusims[1:nits], log10(MSE2), "g-^");
+xlabel("Simulations");
+ylabel("log₁₀(MSE)");
+legend(["Algorithm 3","Algorithm 4"]);
+PyPlot.tight_layout();
+PyPlot.savefig("normal_MSE.pdf");
