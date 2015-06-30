@@ -106,7 +106,7 @@ end
 
 ##Return the parameter means (a vector)
 function parameter_means(out::ABCRejOutput)
-    mean(out.parameters, WeightVec(out.weights), 2)
+    vec(mean(out.parameters, WeightVec(out.weights), 2))
 end
 
 ##Return parameter means in each iteration. The [i,j] entry is for parameter i in iteration j.
@@ -120,7 +120,7 @@ end
 
 ##Return marginal parameter variances (a vector)
 function parameter_vars(out::ABCRejOutput)
-  var(out.parameters, WeightVec(out.weights), 2)
+  vec(var(out.parameters, WeightVec(out.weights), 2))
 end
 
 ##Return marginal parameter variances in each iteration. The [i,j] entry is for parameter i in iteration j.
