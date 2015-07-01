@@ -17,6 +17,12 @@ function init(x::ABCDistance, sumstats::Array{Float64, 2})
     x
 end
 
+function init(x::ABCDistance, sumstats::Array{Float64, 2}, parameters::Array{Float64, 2})
+    ##Default is to ignore parameters, as these are often not needed
+    init(x, sumstats)
+end
+
+
 type Lp <: ABCDistance
     sobs::Array{Float64,1}
     p::Float64
