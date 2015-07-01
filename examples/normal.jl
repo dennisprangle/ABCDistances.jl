@@ -50,13 +50,17 @@ smcoutput_noadapt = abcSMC_comparison(abcinput, 1000, 1/2, 50000, h1=smcoutput_a
 srand(20);
 abcinput.abcdist = WeightedEuclidean(sobs);
 smcoutput_noadapt2 = abcSMC(abcinput, 1000, 1/2, 50000, adaptive=false, store_init=true);
+srand(20);
+abcinput.abcdist = MahalanobisEmp(sobs);
+smcoutput_Mahalanobis = abcSMC(abcinput, 1000, 1/2, 50000, adaptive=true, store_init=true);
 
 ##Look at weights
 smcoutput_noadapt.abcdists[1].w
-smcoutput_noadapt2.abcdists[1].w
+smcoutput_noadapt2.abcdists[1].w ##Extremely similar
 [smcoutput_adapt.abcdists[i].w for i in 1:smcoutput_adapt.niterations]
 
 ##Plot simulations from each importance density and acceptance regions
+##First for the two analyses shown in the paper
 nits = min(smcoutput_noadapt.niterations, smcoutput_adapt.niterations)
 PyPlot.figure(figsize=(12,12))
 PyPlot.subplot(221)
@@ -90,6 +94,30 @@ PyPlot.title("Algorithm 4 acceptance regions")
 PyPlot.tight_layout()
 PyPlot.savefig("normal_acc_regions.pdf")
 
+##Preceding plot for two analyses omitted from the paper
+##(Mahalanobis acc region omitted as this would need extra code)
+nits = min(smcoutput_noadapt2.niterations, smcoutput_Mahalanobis.niterations)
+PyPlot.figure(figsize=(12,12))
+PyPlot.subplot(221)
+for i in 1:nits
+    plot_init(smcoutput_noadapt2, i)
+end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.subplot(222)
+for i in 1:nits
+    plot_init(smcoutput_Mahalanobis, i)
+end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$") 
+PyPlot.subplot(223)
+for i in 1:nits
+    plot_acc(smcoutput_noadapt2, i)
+end
+PyPlot.xlabel(L"$s_1$")
+PyPlot.ylabel(L"$s_2$")
+PyPlot.tight_layout()
+
 ##Plot MSEs
 get_mses(p, w) = sum(p.^2.*w) / sum(w)
 s1 = smcoutput_noadapt;
@@ -101,6 +129,15 @@ plot(smcoutput_noadapt.cusims[1:nits], log10(MSE1), "b-o");
 plot(smcoutput_adapt.cusims[1:nits], log10(MSE2), "g-^");
 xlabel("Simulations");
 ylabel("log₁₀(MSE)");
-legend(["Algorithm 3","Algorithm 4"]);
+legend(["Algorithm 2","Algorithm 4"]);
 PyPlot.tight_layout();
 PyPlot.savefig("normal_MSE.pdf");
+
+##Add lines for other algorithms
+s3 = smcoutput_noadapt2;
+s4 = smcoutput_Mahalanobis;
+MSE3 = Float64[get_mses(s3.parameters[1,:,i], s3.weights[:,i])  for i in 1:nits];
+MSE4 = Float64[get_mses(s4.parameters[1,:,i], s4.weights[:,i])  for i in 1:nits];
+plot(smcoutput_noadapt2.cusims[1:nits], log10(MSE3), "r-x");
+plot(smcoutput_Mahalanobis.cusims[1:nits], log10(MSE4), "k-|");
+legend(["Algorithm 2","Algorithm 4","Alg 4 (non-adaptive)", "Alg 4 Mahalanobis"]);

@@ -84,6 +84,8 @@ srand(1);
 smcoutput_nonadaptive = abcSMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
 smcoutput_nonadaptive2 = abcSMC(abcinput, 200, 1/2, 50000);
 smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+abcinput.abcdist = MahalanobisEmp(x0)
+smcoutput_Mahalanobis = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
 
 ##Plot weights
 w1 = smcoutput_nonadaptive.abcdists[1].w;
@@ -108,7 +110,7 @@ PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"]);
 PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
-##Plot MSEs
+##Plot MSEs. First only those algorithms used in paper.
 outputs = (smcoutput_nonadaptive, smcoutput_adaptive);
 pnames = ("Prey growth", "Predation", "Predator death");
 leg_code = ("b-o", "g-^");
@@ -132,6 +134,20 @@ for i in 1:3
 end
 PyPlot.tight_layout();
 PyPlot.savefig("LV_mse.pdf");
+
+##Add MSEs for other algorithms
+outputs = (smcoutput_nonadaptive2, smcoutput_Mahalanobis);
+leg_code = ("r-x", "k-|");
+for i in 1:length(outputs)
+    s = outputs[i]
+    m = parameter_means(s)
+    v = parameter_vars(s)
+    c = s.cusims ./ 1000;
+    for j in 1:3
+        PyPlot.subplot(1, 3, j)
+        PyPlot.plot(c, vec(log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2)), leg_code[i])
+    end
+end
 
 ##Simulations used for distance initialisation
 ss_toplot = Array[smcoutput_nonadaptive.init_sims[1],
