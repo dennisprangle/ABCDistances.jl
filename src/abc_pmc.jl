@@ -6,7 +6,7 @@
 ##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
 ##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
 ##silent - if true no status messages are returned
-function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
+function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
@@ -155,7 +155,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         firstit = false
     end
         
-    ##Put results into ABCSMCOutput object
+    ##Put results into ABCPMCOutput object
     parameters = Array(Float64, (nparameters, N, itsdone))
     sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
     distances = Array(Float64, (N, itsdone))
@@ -177,7 +177,7 @@ function abcSMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         init_sims = Array(Array{Float64, 2}, 0)
         init_pars = Array(Array{Float64, 2}, 0)
     end
-    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
+    output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
 
 ##Check if summary statistics meet acceptance requirement
@@ -215,12 +215,12 @@ function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::
     weights ./ sum(weights)
 end
 
-##Standard ABC SMC
+##Standard ABC PMC
 ##Included so comparisons can be made in the paper  
 ##Distance is not updated, but can be set at end of 1st iteration (if initialise_dist is true)
 ##The initial value of h can be specified by h1 argument (but not if initialise_dist is true)
-##TO DO: maybe sort out code overlap repetition with abcSMC function
-function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; initialise_dist=true, store_init=false, diag_perturb=false, silent=false, h1=Inf)
+##TO DO: maybe sort out code overlap repetition with abcPMC function
+function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; initialise_dist=true, store_init=false, diag_perturb=false, silent=false, h1=Inf)
     if initialise_dist && h1<Inf
         error("To initialise distance during the algorithm the first threshold must be Inf")
     end
@@ -368,7 +368,7 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         firstit = false
     end
         
-    ##Put results into ABCSMCOutput object
+    ##Put results into ABCPMCOutput object
     parameters = Array(Float64, (nparameters, N, itsdone))
     sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
     distances = Array(Float64, (N, itsdone))
@@ -390,5 +390,5 @@ function abcSMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         init_sims = Array(Array{Float64, 2}, 0)
         init_pars = Array(Array{Float64, 2}, 0)
     end
-    output = ABCSMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
+    output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end

@@ -25,12 +25,12 @@ srand(1)
 out1 = abcRejection(abcinput, 1000, 200)
 abcRejection(abcinput, 1000, 0.1)
 
-##ABC-SMC
+##ABC-PMC
 srand(1)
-out2 = abcSMC(abcinput, 200, 100, 5000);
-abcSMC(abcinput, 200, 100, 5000, adaptive=true);
-abcSMC(abcinput, 200, 100, 5000, store_init=true);
-abcSMC(abcinput, 200, 100, 5000, adaptive=true, store_init=true);
+out2 = abcPMC(abcinput, 200, 100, 5000);
+abcPMC(abcinput, 200, 100, 5000, adaptive=true);
+abcPMC(abcinput, 200, 100, 5000, store_init=true);
+abcPMC(abcinput, 200, 100, 5000, adaptive=true, store_init=true);
 
 ##Mean and variance functions
 parameter_means(out1)

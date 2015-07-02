@@ -32,8 +32,8 @@ type ABCRejOutput <: ABCOutput
     init_pars::Array{Float64, 2}  ##pars used for distance initialisation (only stored optionally)
 end
 
-##ABC SMC output
-type ABCSMCOutput <: ABCOutput
+##ABC PMC output
+type ABCPMCOutput <: ABCOutput
     nparameters::Int32
     nsumstats::Int32  
     niterations::Int32            ##Number of iteration performed
@@ -110,7 +110,7 @@ function parameter_means(out::ABCRejOutput)
 end
 
 ##Return parameter means in each iteration. The [i,j] entry is for parameter i in iteration j.
-function parameter_means(out::ABCSMCOutput)
+function parameter_means(out::ABCPMCOutput)
     means = Array(Float64, (out.nparameters, out.niterations))
     for (it in 1:out.niterations)
       means[:, it] = mean(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
@@ -124,7 +124,7 @@ function parameter_vars(out::ABCRejOutput)
 end
 
 ##Return marginal parameter variances in each iteration. The [i,j] entry is for parameter i in iteration j.
-function parameter_vars(out::ABCSMCOutput)
+function parameter_vars(out::ABCPMCOutput)
     vars = Array(Float64, (out.nparameters, out.niterations))
     for (it in 1:out.niterations)
       vars[:, it] = var(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
@@ -138,7 +138,7 @@ function parameter_covs(out::ABCRejOutput)
 end
 
 ##Return parameter covariance matrix for each iteration. The [:,:,k] entry is for iteration k.
-function parameter_covs(out::ABCSMCOutput)
+function parameter_covs(out::ABCPMCOutput)
     covs = Array(Float64, (out.nparameters, out.nparameters, out.niterations))
     for (it in 1:out.niterations)
       covs[:, :, it] = cov(out.parameters[:,:,it], WeightVec(out.weights[:,it]), vardim=2)

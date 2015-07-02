@@ -81,15 +81,15 @@ abcinput.abcdist = WeightedEuclidean(x0)
 abcinput.nsumstats = nobs;
 
 srand(1);
-smcoutput_nonadaptive = abcSMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
-smcoutput_nonadaptive2 = abcSMC(abcinput, 200, 1/2, 50000);
-smcoutput_adaptive = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+pmcoutput_nonadaptive = abcPMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
+pmcoutput_nonadaptive2 = abcPMC(abcinput, 200, 1/2, 50000);
+pmcoutput_adaptive = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
 abcinput.abcdist = MahalanobisEmp(x0)
-smcoutput_Mahalanobis = abcSMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+pmcoutput_Mahalanobis = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
 
 ##Plot weights
-w1 = smcoutput_nonadaptive.abcdists[1].w;
-w2 = smcoutput_adaptive.abcdists[smcoutput_adaptive.niterations].w;
+w1 = pmcoutput_nonadaptive.abcdists[1].w;
+w2 = pmcoutput_adaptive.abcdists[pmcoutput_adaptive.niterations].w;
 PyPlot.figure(figsize=(12,6));
 PyPlot.subplot(121);
 plot(obs_times, w1[1:17]/sum(w1), "b-o");
@@ -111,7 +111,7 @@ PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
 ##Plot MSEs. First only those algorithms used in paper.
-outputs = (smcoutput_nonadaptive, smcoutput_adaptive);
+outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive);
 pnames = ("Prey growth", "Predation", "Predator death");
 leg_code = ("b-o", "g-^");
 PyPlot.figure(figsize=(12,6))
@@ -136,7 +136,7 @@ PyPlot.tight_layout();
 PyPlot.savefig("LV_mse.pdf");
 
 ##Add MSEs for other algorithms
-outputs = (smcoutput_nonadaptive2, smcoutput_Mahalanobis);
+outputs = (pmcoutput_nonadaptive2, pmcoutput_Mahalanobis);
 leg_code = ("r-x", "k-|");
 for i in 1:length(outputs)
     s = outputs[i]
@@ -150,8 +150,8 @@ for i in 1:length(outputs)
 end
 
 ##Simulations used for distance initialisation
-ss_toplot = Array[smcoutput_nonadaptive.init_sims[1],
-                  smcoutput_adaptive.init_sims[smcoutput_adaptive.niterations]];
+ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
+                  pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
 ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)"];             
 PyPlot.figure(figsize=(12,12));
 plotcounter = 1;

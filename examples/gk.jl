@@ -51,26 +51,26 @@ abcinput.sample_sumstats = sample_sumstats;
 abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.nsumstats = length(quantiles);
 
-##Perform ABC-SMC
-smcoutput1 = abcSMC(abcinput, 1000, 1/3, 1000000);
-smcoutput2 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
-smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000);
+##Perform ABC-PMC
+pmcoutput1 = abcPMC(abcinput, 1000, 1/3, 1000000);
+pmcoutput2 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
+pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/3, 1000000);
 abcinput.abcdist = MahalanobisEmp(sobs);
-smcoutput4 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
+pmcoutput4 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
 
 ##Plot MSEs (and also bias^2, variance)
-b1 = parameter_means(smcoutput1);
-b2 = parameter_means(smcoutput2);
-b3 = parameter_means(smcoutput3);
-b4 = parameter_means(smcoutput4);
-v1 = parameter_vars(smcoutput1);
-v2 = parameter_vars(smcoutput2);
-v3 = parameter_vars(smcoutput3);
-v4 = parameter_vars(smcoutput4);
-c1 = smcoutput1.cusims ./ 1000;
-c2 = smcoutput2.cusims ./ 1000;
-c3 = smcoutput3.cusims ./ 1000;
-c4 = smcoutput4.cusims ./ 1000;
+b1 = parameter_means(pmcoutput1);
+b2 = parameter_means(pmcoutput2);
+b3 = parameter_means(pmcoutput3);
+b4 = parameter_means(pmcoutput4);
+v1 = parameter_vars(pmcoutput1);
+v2 = parameter_vars(pmcoutput2);
+v3 = parameter_vars(pmcoutput3);
+v4 = parameter_vars(pmcoutput4);
+c1 = pmcoutput1.cusims ./ 1000;
+c2 = pmcoutput2.cusims ./ 1000;
+c3 = pmcoutput3.cusims ./ 1000;
+c4 = pmcoutput4.cusims ./ 1000;
 PyPlot.figure(figsize=(12,8))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
@@ -113,17 +113,17 @@ for i in 1:4
 end
 
 ##Compute weights
-w1 = smcoutput1.abcdists[1].w;
-w2 = Array(Float64, (smcoutput2.niterations, length(quantiles)));
-for i in 1:smcoutput2.niterations
-    w2[i,:] = smcoutput2.abcdists[i].w
+w1 = pmcoutput1.abcdists[1].w;
+w2 = Array(Float64, (pmcoutput2.niterations, length(quantiles)));
+for i in 1:pmcoutput2.niterations
+    w2[i,:] = pmcoutput2.abcdists[i].w
 end
-w3 = smcoutput3.abcdists[1].w;
+w3 = pmcoutput3.abcdists[1].w;
 
 ##Plot weights
 PyPlot.figure(figsize=(12,4))
 PyPlot.plot(quantiles, w3/sum(w3), "-o")
-wlast = vec(w2[smcoutput2.niterations, :])
+wlast = vec(w2[pmcoutput2.niterations, :])
 PyPlot.plot(quantiles, wlast/sum(wlast), "-^")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
 PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"])
@@ -142,7 +142,7 @@ vars =  zeros((4, 4, ndatasets,));
 squaredbiases = zeros((4, 4, ndatasets));
 
 ##Returns squared bias, variance and RMSE of weighted posterior sample wrt true parameters
-function getError(s::ABCSMCOutput, pobs::Array{Float64, 1})
+function getError(s::ABCPMCOutput, pobs::Array{Float64, 1})
     n = s.niterations
     p = squeeze(s.parameters[:,:,n], 3)
     wv = WeightVec(vec(s.weights[:,n]))
@@ -167,20 +167,20 @@ for i in 1:ndatasets
     theta0 = rand(GKPrior())
     (success, sobs) = sample_sumstats(theta0)
     abcinput.abcdist = WeightedEuclidean(sobs)
-    smcoutput1 = abcSMC(abcinput, 1000, 1/3, 1000000, silent=true)
+    pmcoutput1 = abcPMC(abcinput, 1000, 1/3, 1000000, silent=true)
     next!(prog)
-    smcoutput2 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
+    pmcoutput2 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
     next!(prog)
-    smcoutput3 = abcSMC_comparison(abcinput, 1000, 1/3, 1000000, silent=true)
+    pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/3, 1000000, silent=true)
     next!(prog)
     abcinput.abcdist = MahalanobisEmp(sobs)
-    smcoutput4 = abcSMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
+    pmcoutput4 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
     next!(prog)    
     trueθs[:,i] = theta0
-    (squaredbiases[:,1,i], vars[:,1,i], RMSEs[:,1,i]) = getError(smcoutput1, theta0)
-    (squaredbiases[:,2,i], vars[:,2,i], RMSEs[:,2,i]) = getError(smcoutput2, theta0)
-    (squaredbiases[:,3,i], vars[:,3,i], RMSEs[:,3,i]) = getError(smcoutput3, theta0)
-    (squaredbiases[:,4,i], vars[:,4,i], RMSEs[:,4,i]) = getError(smcoutput4, theta0)
+    (squaredbiases[:,1,i], vars[:,1,i], RMSEs[:,1,i]) = getError(pmcoutput1, theta0)
+    (squaredbiases[:,2,i], vars[:,2,i], RMSEs[:,2,i]) = getError(pmcoutput2, theta0)
+    (squaredbiases[:,3,i], vars[:,3,i], RMSEs[:,3,i]) = getError(pmcoutput3, theta0)
+    (squaredbiases[:,4,i], vars[:,4,i], RMSEs[:,4,i]) = getError(pmcoutput4, theta0)
 end
 
 ##Summarise output
