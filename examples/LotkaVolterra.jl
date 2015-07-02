@@ -64,11 +64,10 @@ end
 
 ##Define model
 function sample_sumstats(pars::Array{Float64,1})
-    ##TO DO: IS UPPER LIMIT ON SIMS EVER REACHED?
     (success, x) = gillespie_partial_sim(stoichiometry_LV, state0, exp(pars), obs_times, 100000)
     if (success)
         stats = vec(x') + σ0*randn(nobs)
-    else        
+    else
         stats = zeros(x)
     end
     (success, stats)
