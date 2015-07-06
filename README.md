@@ -136,7 +136,7 @@ Whether to return simulations used to initialise the distance function.
 The methods are:
 
 * `(in, nsims, k; store_init)`
-Performs ABC accepting k simulations
+Performs ABC accepting k simulations.
 
 * `(in, nsims, h; store_init)`
 Performs ABC accepting simulations with distance below the threshold h.
@@ -212,19 +212,19 @@ Its fields are:
 * `nparameters`
 Number of parameters.
 * `nsumstats`
-Number of summary statistics
+Number of summary statistics.
 * `nsims`
-Number of simulations performed
+Number of simulations performed.
 * `nsuccesses`
-Number of successful simulations (i.e. excluding those with success=false)
+Number of successful simulations (i.e. excluding those with success=false).
 * `parameters`
-`parameters[i,j]` is the ith parameter for the jth accepted simulation
+`parameters[i,j]` is the ith parameter for the jth accepted simulation.
 * `sumstats`
-`sumstats[i,j]` is the ith summary statistic for the jth accepted simulation
+`sumstats[i,j]` is the ith summary statistic for the jth accepted simulation.
 * `distances`
-`distances[i]` is the distance for the ith accepted simulation
+`distances[i]` is the distance for the ith accepted simulation.
 * `weights`
-`weights[i]` is the weight for the ith accepted simulation
+`weights[i]` is the weight for the ith accepted simulation.
 * `abcdist`
 A variable of type `ABCDistance` defining how distance behaves.
 If the distance requires weights etc to be set based on simulations, then these details are stored in this variable.
@@ -246,29 +246,29 @@ Its fields are:
 * `nparameters`
 Number of parameters.
 * `nsumstats`
-Number of summary statistics
+Number of summary statistics.
 * `niterations`
-Number of iterations performed (i.e. number of target distributions used)
+Number of iterations performed (i.e. number of target distributions used).
 * `nsims`
-Total number of simulations performed
+Total number of simulations performed.
 * `cusims`
-`cusims[i]` is the cumulative number of simulations performed up to the end of iteration i
+`cusims[i]` is the cumulative number of simulations performed up to the end of iteration i.
 * `parameters`
-`parameters[i,j,k]` is the ith parameter for the jth accepted simulation in iteration k
+`parameters[i,j,k]` is the ith parameter for the jth accepted simulation in iteration k.
 * `sumstats`
-`sumstats[i,j,k]` is the ith summary statistic for the jth accepted sim in iteration k
+`sumstats[i,j,k]` is the ith summary statistic for the jth accepted sim in iteration k.
 * `distances`
-`distances[i,j]` is the distance for ith accepted simulation in iteration j
+`distances[i,j]` is the distance for ith accepted simulation in iteration j.
 * `weights`
-`weights[i,j]` is the weight for ith accepted sim in iteration j
+`weights[i,j]` is the weight for ith accepted sim in iteration j.
 * `abcdists`
-`abcdists[i]` the `ABCDistance` type variable defining how distance behaves in iteration i
+`abcdists[i]` the `ABCDistance` type variable defining how distance behaves in iteration i.
 * `thresholds`
-`thresholds[i] is the acceptance threshold used in iteration i
+`thresholds[i] is the acceptance threshold used in iteration i.
 * `init_sims`
-##init_sims[i][j,k] is the jth summary statistic in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
+init_sims[i][j,k] is the jth summary statistic in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
 * `init_pars`
-##init_pars[i][j,k] is the jth parameter in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
+init_pars[i][j,k] is the jth parameter in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
 
 ####`parameter_means`, `parameter_vars`, `parameter_covs`
 
@@ -285,7 +285,7 @@ Output is a matrix whose columns are parameter variances in each iteration.
 * `parameter_covs(out::ABCRejOutput)`
 Output is a parameter variance matrix.
 * `parameter_vars(out:ABCPMCOutput)`
-Outputs `x` where `x[:,:,i]` is a parameter variance matrix for ith iteration.
+Outputs `x` where `x[:,:,i]` is a parameter variance matrix for the ith iteration.
 
 ###Distance functions
 
@@ -309,7 +309,7 @@ It has several constructors.
   * `WeightedEuclidean(sobs)`
   Equivalent to `WeightedEuclidean(sons, "MAD")`
 * MahalanobisEmp
-This is weighted Euclidean distance with summary statistics weighted by a matrix i.e. $d(x,y)=(x-y)^T W (x-y)$. (This can often be viewed as an empirical estimate of Mahalanobis distance.)
+This is weighted Euclidean distance with summary statistics weighted by a matrix i.e. d(x,y)=(x-y)' W (x-y). (This can often be viewed as an empirical estimate of Mahalanobis distance.)
 It has two constructors.
   * MahalanobisEmp(sobs, Ω)
   Where `Ω` is used as the matrix W.
