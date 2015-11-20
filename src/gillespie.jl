@@ -1,14 +1,14 @@
 ##Details of reactions in a convenient format for later use
 immutable Stoichiometry
-    nspecies::Int32 ##How many species in total
-    nreactions::Int32 ##How many reactions in total
-    input_length::Int32 ##Length of the input arrays below
+    nspecies::Int ##How many species in total
+    nreactions::Int ##How many reactions in total
+    input_length::Int ##Length of the input arrays below
     ##Reaction input_reaction[i] requires input_index[i] units of species input_species[i]
-    input_reactions::Array{Int32, 1}
-    input_species::Array{Int32, 1}
-    input_indices::Array{Int32, 1}
+    input_reactions::Array{Int, 1}
+    input_species::Array{Int, 1}
+    input_indices::Array{Int, 1}
     ##change[i,j] represents net change in number of units of species i from reaction j
-    change::Array{Int32, 2}
+    change::Array{Int, 2}
 
     function Stoichiometry(nspecies, nreactions, input_length, input_reactions, input_species, input_indices, change)
         if (nspecies < 1)
@@ -39,7 +39,7 @@ immutable Stoichiometry
 end
 
 ##Stoichiometry constructor using P (inputs) and Q (outputs) matrices as in Owen et at 2014. (i.e. P[i,j] is number of species j required for reaction i, and Q[i,j] is number of species j output by reaction i).
-function Stoichiometry(P::Array{Int32, 2}, Q::Array{Int32, 2})
+function Stoichiometry(P::Array{Int, 2}, Q::Array{Int, 2})
     if (size(P) != size(Q))
         error("Dimensions of P and Q must be the same")
     elseif (minimum(P) < 0)
@@ -49,9 +49,9 @@ function Stoichiometry(P::Array{Int32, 2}, Q::Array{Int32, 2})
     end
     (nreactions, nspecies) = size(P)
     input_length = 0
-    input_reactions = Array(Int32, 0)
-    input_species = Array(Int32, 0)
-    input_indices = Array(Int32, 0)
+    input_reactions = Array(Int, 0)
+    input_species = Array(Int, 0)
+    input_indices = Array(Int, 0)
     ##Store the non-zero elements of P
     for (this_reaction in 1:nreactions)
         for (this_species in 1:nspecies)
@@ -70,7 +70,7 @@ end
 ##Simulate forward 1 event
 ##Using stoichiometry "s", current state "state" and constants "θ"
 ##Return tuple of time till next event (can be Inf) and event number
-function gillespie_step(s::Stoichiometry, state::Array{Int32, 1}, θ::Array{Float64, 1})
+function gillespie_step(s::Stoichiometry, state::Array{Int, 1}, θ::Array{Float64, 1})
     rates = copy(θ)
     expdist = Exponential()  
     for (i in 1:s.input_length)
@@ -91,7 +91,7 @@ end
 ##A tuple (success, observations) is returned
 ##success is true if all the observation times were reached in the specified number of iterations
 ##observations is a matrix with entry [:,i] the state at time obs_times[i] (if success=false, unobserved entries are zero)
-function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Array{Float64, 1}, obs_times::Array{Float64, 1}, maxit::Integer)
+function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int, 1}, θ::Array{Float64, 1}, obs_times::Array{Float64, 1}, maxit::Integer)
     if (length(state0) != s.nspecies)
         error("Number of species given in initial state and stoichiometry do not match")
     elseif (length(θ) != s.nreactions)
@@ -104,7 +104,7 @@ function gillespie_partial_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Ar
         error("obs_times must be non-negative")
     end
     nobs = length(obs_times)
-    observations = zeros(Int32, (s.nspecies, nobs))
+    observations = zeros(Int, (s.nspecies, nobs))
     obs_count = 1 ##Which observation we are currently looking for
     if (obs_times[1] == 0)
         observations[:,1] = state0
@@ -140,7 +140,7 @@ end
 ##with stoichiometry "s", initial state "state0" and constants "θ"
 ##Until (a) time maxt is reached (b) maxit iterations have been performed (c) No further events possible.
 ##The output is a vector of event times and a matrix whose columns are corresponding states
-function gillespie_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Array{Float64, 1}, maxt::FloatingPoint, maxit::Integer)
+function gillespie_sim(s::Stoichiometry, state0::Array{Int, 1}, θ::Array{Float64, 1}, maxt::FloatingPoint, maxit::Integer)
     if (length(state0) != s.nspecies)
         error("Number of species given in initial state and stoichiometry do not match")
     elseif (length(θ) != s.nreactions)
@@ -149,7 +149,7 @@ function gillespie_sim(s::Stoichiometry, state0::Array{Int32, 1}, θ::Array{Floa
         error("Negative values in θ")
     end
     event_times = [0.0]
-    observations = Array(Int32, (s.nspecies, 1))
+    observations = Array(Int, (s.nspecies, 1))
     observations[:,1] = state0
     obs_count = 2 ##Which observation we are currently looking for
     t_curr = 0.0

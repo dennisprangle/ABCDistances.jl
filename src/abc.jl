@@ -11,7 +11,7 @@ type ABCInput
     prior::Union(DiscreteMultivariateDistribution, ContinuousMultivariateDistribution)
     sample_sumstats::Function
     abcdist::ABCDistance
-    nsumstats::Int32    
+    nsumstats::Int
 end
 
 ##Full results of an ABC analysis
@@ -19,10 +19,10 @@ abstract ABCOutput
 
 ##Rejection sampling output
 type ABCRejOutput <: ABCOutput
-    nparameters::Int32
-    nsumstats::Int32 
-    nsims::Int32                  ##Number of simulations performed
-    nsuccesses::Int32             ##Number of successful simulations, excluding early rejections. Usually equal to nsims.
+    nparameters::Int
+    nsumstats::Int
+    nsims::Int                  ##Number of simulations performed
+    nsuccesses::Int             ##Number of successful simulations, excluding early rejections. Usually equal to nsims.
     parameters::Array{Float64, 2} ##parameters[i,j] is ith parameter for jth accepted sim
     sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
     distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim
@@ -34,11 +34,11 @@ end
 
 ##ABC PMC output
 type ABCPMCOutput <: ABCOutput
-    nparameters::Int32
-    nsumstats::Int32  
-    niterations::Int32            ##Number of iteration performed
-    nsims::Int32                  ##Total number of simulations performed
-    cusims::Array{Int32, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
+    nparameters::Int
+    nsumstats::Int
+    niterations::Int            ##Number of iteration performed
+    nsims::Int                  ##Total number of simulations performed
+    cusims::Array{Int, 1}       ##cusims[i] is cumulative sims used up to end of iteration i
     parameters::Array{Float64, 3} ##parameters[i,j,k] is ith parameter for jth accepted sim in iteration k
     sumstats::Array{Float64, 3}   ##sumstats[i,j,k] is ith sumstat for jth accepted sim in iteration k
     distances::Array{Float64, 2}  ##distances[i,j] is distance for ith accepted sim in iteration j

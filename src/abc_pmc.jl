@@ -10,7 +10,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
-    M::Int32 = ceil(N/α)
+    M::Int = ceil(N/α)
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0
@@ -20,7 +20,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     dists = ABCDistance[]
     thresholds = Float64[]
     rejOutputs = ABCRejOutput[]
-    cusims = Int32[]
+    cusims = Int[]
     ##Main loop
     while (simsdone < maxsims)
         if !firstit
@@ -227,7 +227,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
-    k::Int32 = ceil(N*α)
+    k::Int = ceil(N*α)
     nparameters = length(abcinput.prior)
     itsdone = 0
     simsdone = 0
@@ -237,7 +237,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
     dists = ABCDistance[abcinput.abcdist]
     thresholds = Float64[h1]
     rejOutputs = ABCRejOutput[]
-    cusims = Int32[]
+    cusims = Int[]
     ##Main loop
     while (simsdone < maxsims)
         if !firstit

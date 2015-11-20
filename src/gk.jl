@@ -12,7 +12,7 @@ end
 ##Simulates U(0,1) order statistics specified in "orderstats" from n total sims
 ##orderstats should be in ascending order
 ##See Ripley "Stochastic Simulation" pg 98
-function unif_os(orderstats::Array{Int32,1}, n::Int32)
+function unif_os(orderstats::Array{Int,1}, n::Int)
     p = size(orderstats)[1]
     w = Array(Float64, p+1)
     w[1] = rand(Gamma(orderstats[1]))
@@ -26,7 +26,7 @@ end
 
 ##Efficiently simulates g&k order statistics specified in "orderstats" from n total sims
 ##orderstats should be in ascending order
-function rgk_os(pars::Array{Float64,1}, orderstats::Array{Int32,1}, n::Int32)
+function rgk_os(pars::Array{Float64,1}, orderstats::Array{Int,1}, n::Int)
     (A,B,g,k) = pars
     u = unif_os(orderstats, n)
     z = quantile(Normal(), u)
