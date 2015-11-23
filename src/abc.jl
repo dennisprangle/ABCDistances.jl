@@ -148,18 +148,12 @@ function show(io::IO, out::ABCRejOutput)
     CI_upper = Array(Float64, p)
     for i in 1:p
         y = squeeze(out.parameters[i,:], 1)
-        if (maximum(out.weights)==minimum(out.weights)) 
-          (CI_lower[i], CI_upper[i]) = quantile(y, [0.025,0.975])
-        else
-          ##Crude way to approximate weighted quantiles
-          z = sample(y, WeightVec(out.weights), 1000)
-          (CI_lower[i], CI_upper[i]) = quantile(z, [0.025,0.975])
-        end
+        (CI_lower[i], CI_upper[i]) = quantile(y, WeightVec(out.weights), [0.025,0.975])
     end
     print("ABC output, $k accepted values from $(out.nsims) simulations\n")
     ess = sum(out.weights)^2 / sum(out.weights.^2)
     print("Effective sample size $(round(ess,1))\n")
-    print("Means and rough 95% credible intervals:\n")
+    print("Means and 95% credible intervals:\n")
     for (i in 1:p)
         @printf("Parameter %d: %.2e (%.2e,%.2e)\n", i, means[i], CI_lower[i], CI_upper[i])
     end
