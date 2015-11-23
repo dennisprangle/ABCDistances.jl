@@ -8,7 +8,7 @@
 #################
 ##Input for an ABC analysis
 type ABCInput
-    prior::Union(DiscreteMultivariateDistribution, ContinuousMultivariateDistribution)
+    prior::Union{DiscreteMultivariateDistribution, ContinuousMultivariateDistribution}
     sample_sumstats::Function
     abcdist::ABCDistance
     nsumstats::Int

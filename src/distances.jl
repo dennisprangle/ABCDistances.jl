@@ -54,9 +54,9 @@ end
 type WeightedEuclidean <: ABCDistance
     sobs::Array{Float64,1}
     w::Array{Float64,1} ##Weights for each summary statistic - square root of estimated precisions
-    scale_type::String ##Whether to initialise scale using "MAD", "sd" or "ADO"
+    scale_type::AbstractString ##Whether to initialise scale using "MAD", "sd" or "ADO"
 
-    function WeightedEuclidean(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::String)
+    function WeightedEuclidean(sobs::Array{Float64,1}, w::Array{Float64,1}, scale_type::AbstractString)
         if (scale_type ∉ ("MAD", "sd", "sdreg", "ADO"))
             error("scale_type must be MAD sd sdreg or ADO")
         end
@@ -65,7 +65,7 @@ type WeightedEuclidean <: ABCDistance
 end
 
 ##Leaves w undefined
-function WeightedEuclidean(sobs::Array{Float64, 1}, scale_type::String)
+function WeightedEuclidean(sobs::Array{Float64, 1}, scale_type::AbstractString)
     WeightedEuclidean(sobs, Array(Float64,0), scale_type)
 end
 

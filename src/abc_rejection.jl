@@ -24,7 +24,7 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     parameters = parameters[:, successes]
     sumstats = sumstats[:, successes]
     newdist = init(in.abcdist, sumstats, parameters)
-    distances = [evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
+    distances = Float64[evaldist(newdist, sumstats[:,i]) for i=1:nsuccesses]
     if (store_init)
         init_sims = sumstats
         init_pars = parameters
@@ -48,7 +48,7 @@ function abcRejection(in::ABCInput, nsims::Integer, k::Integer; store_init=false
 end
 
 ##Do abcRejection, accepting distances <= h
-function abcRejection(in::ABCInput, nsims::Integer, h::FloatingPoint; store_init=false)
+function abcRejection(in::ABCInput, nsims::Integer, h::AbstractFloat; store_init=false)
     out = abcRejection(in, nsims, store_init=store_init)
     if (out.distances[nsims] <= h)
         k = out.nsuccesses

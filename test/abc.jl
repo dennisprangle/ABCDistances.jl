@@ -7,7 +7,7 @@ using Distributions
 ##Set up abcinput
 function sample_sumstats(pars::Array)
     success = true
-    stats = [pars[1] + 0.1*randn(1), randn(1)]
+    stats = [pars[1] + 0.1*randn(1); randn(1)]
     (success, stats)
 end
 

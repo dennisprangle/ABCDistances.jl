@@ -140,7 +140,7 @@ end
 ##with stoichiometry "s", initial state "state0" and constants "θ"
 ##Until (a) time maxt is reached (b) maxit iterations have been performed (c) No further events possible.
 ##The output is a vector of event times and a matrix whose columns are corresponding states
-function gillespie_sim(s::Stoichiometry, state0::Array{Int, 1}, θ::Array{Float64, 1}, maxt::FloatingPoint, maxit::Integer)
+function gillespie_sim(s::Stoichiometry, state0::Array{Int, 1}, θ::Array{Float64, 1}, maxt::AbstractFloat, maxit::Integer)
     if (length(state0) != s.nspecies)
         error("Number of species given in initial state and stoichiometry do not match")
     elseif (length(θ) != s.nreactions)
