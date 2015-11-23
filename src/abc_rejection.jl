@@ -2,8 +2,38 @@
 ##ABC-Rejection code
 ##############
 
-##Do abcRejection calculations but accept everything
-##i.e. do simulations, calculate distances and sort into distance order
+"
+`abcRejection` has various methods.
+Possible arguments are as follows:
+
+* `in`
+An `ABCInput` variable.
+
+* `nsims`
+How many simulations to perform.
+
+* `k`
+How many simulations to accept (an integer).
+
+* `h`
+Acceptance threshold (floating point).
+
+* `store_init`.
+Whether to return simulations used to initialise the distance function.
+
+The methods are:
+
+* `(in, nsims, k; store_init)`
+Performs ABC accepting k simulations.
+
+* `(in, nsims, h; store_init)`
+Performs ABC accepting simulations with distance below the threshold h.
+
+* `(in, nsims; store_init)`
+Performs ABC accepting everything.
+
+The output is a `ABCRejOutput` object.
+"
 function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     nparameters = length(in.prior)
     parameters = Array(Float64, (nparameters, nsims))

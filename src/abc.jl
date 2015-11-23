@@ -6,7 +6,21 @@
 ##################
 ##TYPE DEFINITIONS
 #################
-##Input for an ABC analysis
+"
+This type contains input needed for any of the ABC algorithms.
+Its fields are:
+
+* `prior`
+A `DiscreteMultivariateDistribution` or `ContinuousMultivariateDistribution` variable defining the prior distribution. These are defined in the `Distributions` package.
+* `sample_sumstats`
+A function taking a (`Float64`) vector of parameters as input and returning `(success, stats)`: a boolean and a (`Float64`) vector of summary statistics. `success=false` indicates a decision that the simulation should be rejected before it was completed. One use case is when simulations from some parameter values are extremely slow.
+* `abc_dist`
+A variable of type `ABCDistance` defining how distance behaves.
+* `nsumstats`
+Dimension of a summary statistic vector.
+
+There is a convenience constructor `ABCInput()`.
+"
 type ABCInput
     prior::Union{DiscreteMultivariateDistribution, ContinuousMultivariateDistribution}
     sample_sumstats::Function
@@ -17,7 +31,39 @@ end
 ##Full results of an ABC analysis
 abstract ABCOutput
 
-##Rejection sampling output
+"
+This type contains output from a ABC-rejection algorithm.
+Its fields are:
+
+* `nparameters`
+Number of parameters.
+* `nsumstats`
+Number of summary statistics.
+* `nsims`
+Number of simulations performed.
+* `nsuccesses`
+Number of successful simulations (i.e. excluding those with success=false).
+* `parameters`
+`parameters[i,j]` is the ith parameter for the jth accepted simulation.
+* `sumstats`
+`sumstats[i,j]` is the ith summary statistic for the jth accepted simulation.
+* `distances`
+`distances[i]` is the distance for the ith accepted simulation.
+* `weights`
+`weights[i]` is the weight for the ith accepted simulation.
+* `abcdist`
+A variable of type `ABCDistance` defining how distance behaves.
+If the distance requires weights etc to be set based on simulations, then these details are stored in this variable.
+* `init_sims`
+`init_sims[i,j]` is the ith summary statistic in the jth simulation used in distance initialisation. This is only recorded if `store_init` is true.
+* `init_pars`
+`init_pars[i,j]` is the ith parameter in the jth simulation used in distance initialisation. This is only recorded if `store_init` is true.
+
+Note that the simulations are usually stored in order of increasing distance.
+This is guaranteed if this variable is the output of `abcRejection`.
+
+A `show` method exists to give a concise summary of a `ABCRejOutput` variable.
+"
 type ABCRejOutput <: ABCOutput
     nparameters::Int
     nsumstats::Int
@@ -32,7 +78,37 @@ type ABCRejOutput <: ABCOutput
     init_pars::Array{Float64, 2}  ##pars used for distance initialisation (only stored optionally)
 end
 
-##ABC PMC output
+"
+This type contains output from a ABC-PMC algorithm.
+Its fields are:
+
+* `nparameters`
+Number of parameters.
+* `nsumstats`
+Number of summary statistics.
+* `niterations`
+Number of iterations performed (i.e. number of target distributions used).
+* `nsims`
+Total number of simulations performed.
+* `cusims`
+`cusims[i]` is the cumulative number of simulations performed up to the end of iteration i.
+* `parameters`
+`parameters[i,j,k]` is the ith parameter for the jth accepted simulation in iteration k.
+* `sumstats`
+`sumstats[i,j,k]` is the ith summary statistic for the jth accepted sim in iteration k.
+* `distances`
+`distances[i,j]` is the distance for ith accepted simulation in iteration j.
+* `weights`
+`weights[i,j]` is the weight for ith accepted sim in iteration j.
+* `abcdists`
+`abcdists[i]` the `ABCDistance` type variable defining how distance behaves in iteration i.
+* `thresholds`
+`thresholds[i] is the acceptance threshold used in iteration i.
+* `init_sims`
+init_sims[i][j,k] is the jth summary statistic in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
+* `init_pars`
+init_pars[i][j,k] is the jth parameter in the kth simulation used in distance initialisation in iteration i. This is only recorded if `store_init` is true. (n.b. This is an array of arrays as the number of simulations used for distance initialisation can vary.)
+"
 type ABCPMCOutput <: ABCOutput
     nparameters::Int
     nsumstats::Int
@@ -49,7 +125,7 @@ type ABCPMCOutput <: ABCOutput
     init_pars::Array{Array{Float64, 2}, 1} ##init_pars[i] is pars for distance initialisation at iteration i (only stored optionally)
 end
 
-##This needs a show function
+##TO DO: ABCPMCOutput needs a show function
 
 #################
 ##CONSTRUCTORS
@@ -104,12 +180,15 @@ function sortABCOutput!(out::ABCRejOutput)
     return
 end
 
-##Return the parameter means (a vector)
+"
+This reports the estimated posterior means of `out`, a `ABCOutput` object.
+If `out` is a `ABCRejOutput` object the output is a vector of parameter means.
+If `out` is a `ABCPMCOutput` object the output is a matrix whose columns are parameter means in each iteration.
+"
 function parameter_means(out::ABCRejOutput)
     vec(mean(out.parameters, WeightVec(out.weights), 2))
 end
 
-##Return parameter means in each iteration. The [i,j] entry is for parameter i in iteration j.
 function parameter_means(out::ABCPMCOutput)
     means = Array(Float64, (out.nparameters, out.niterations))
     for (it in 1:out.niterations)
@@ -118,12 +197,15 @@ function parameter_means(out::ABCPMCOutput)
     means
 end
 
-##Return marginal parameter variances (a vector)
+"
+This reports the estimated posterior marginal variances of `out`, a `ABCOutput` object.
+If `out` is a `ABCRejOutput` object the output is a vector of parameter variances.
+If `out` is a `ABCPMCOutput` object the output is a matrix whose columns are parameter variances in each iteration.
+"
 function parameter_vars(out::ABCRejOutput)
   vec(var(out.parameters, WeightVec(out.weights), 2))
 end
 
-##Return marginal parameter variances in each iteration. The [i,j] entry is for parameter i in iteration j.
 function parameter_vars(out::ABCPMCOutput)
     vars = Array(Float64, (out.nparameters, out.niterations))
     for (it in 1:out.niterations)
@@ -132,12 +214,15 @@ function parameter_vars(out::ABCPMCOutput)
     vars
 end
 
-##Return parameter covariance matrix
+"
+This reports the estimated posterior covariance matrix of `out`, a `ABCOutput` object.
+If `out` is a `ABCRejOutput` object the output is a covariance matrix.
+If `out` is a `ABCPMCOutput` object the output is an array `x` where `x[:,:,i]` is a covariance matrix for the ith iteration.
+"
 function parameter_covs(out::ABCRejOutput)
     cov(out.parameters, WeightVec(out.weights), vardim=2)
 end
 
-##Return parameter covariance matrix for each iteration. The [:,:,k] entry is for iteration k.
 function parameter_covs(out::ABCPMCOutput)
     covs = Array(Float64, (out.nparameters, out.nparameters, out.niterations))
     for (it in 1:out.niterations)

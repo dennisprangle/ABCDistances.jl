@@ -12,6 +12,20 @@ abstract ABCDistance
 #################################
 ##Subtypes and methods of ABCDistance
 #################################
+"
+`ABCDistance` objects are constructed specifying the observed summaries `sobs`.
+Some types require further information which is initialised during an ABC algorithm.
+This is set up by the `init` method.
+Its arguments are
+
+* `x` The `ABCDistance` object
+* `sumstats` All the simulated summaries from the current iteration (including rejections). This is a `Array{Float64, 2}` whose columns are the simulations.
+* `parameters` The parameters corresponding to the `sumstats` simulations. This is also a `Array{Float64, 2}` whose columns are the simulations.
+
+`abcRejection` always calls this method.
+So does `abcPMC` on the first iteration, or all iterations for `adaptive=true`.
+`abcPMC_comparison` calls this on the first iteration if `initialise_dist=true` or otherwise not at all.
+"
 function init(x::ABCDistance, sumstats::Array{Float64, 2})
     ##Default is to return original distance as no initialisation required
     x
@@ -33,6 +47,9 @@ function evaldist(x::Lp, s::Array{Float64,1})
     norm(absdiff, x.p)
 end
 
+"
+Euclidean distance. Its constructor is `Euclidean(sobs)`.
+"
 type Euclidean <: ABCDistance
     sobs::Array{Float64,1}
 end
@@ -51,6 +68,16 @@ function evaldist(x::Logdist, s::Array{Float64,1})
     exp(sum(log(absdiff)))
 end
 
+"""
+This is weighted Euclidean distance with summary statistics weighted by scalars - equation (3) in the paper.
+It has several constructors.
+  * `WeightedEuclidean(sobs, w, scale_type)`
+  Here `w` is the weights for each summary and `scale_type` is how to initialise the scale estimate. Possible values for the latter include `"sd"` and `"MAD"` (standard deviation and median absolute deviation).
+  * `WeightedEuclidean(sobs, scale_type)`
+  Here the weights are left undefined until initialisation of the distance takes place.
+  * `WeightedEuclidean(sobs)`
+  Equivalent to `WeightedEuclidean(sons, "MAD")`
+"""
 type WeightedEuclidean <: ABCDistance
     sobs::Array{Float64,1}
     w::Array{Float64,1} ##Weights for each summary statistic - square root of estimated precisions
@@ -64,7 +91,6 @@ type WeightedEuclidean <: ABCDistance
     end
 end
 
-##Leaves w undefined
 function WeightedEuclidean(sobs::Array{Float64, 1}, scale_type::AbstractString)
     WeightedEuclidean(sobs, Array(Float64,0), scale_type)
 end
@@ -78,9 +104,9 @@ function init(x::WeightedEuclidean, sumstats::Array{Float64, 2}, parameters::Arr
     if (nsims == 0)
         sig = ones(nstats)
     elseif x.scale_type=="MAD"
-        sig = [MAD(vec(sumstats[i,:])) for i in 1:nstats]
+        sig = Float64[MAD(vec(sumstats[i,:])) for i in 1:nstats]
     elseif x.scale_type=="sd"
-        sig = [std(vec(sumstats[i,:])) for i in 1:nstats]
+        sig = Float64[std(vec(sumstats[i,:])) for i in 1:nstats]
     elseif x.scale_type=="sdreg"
         P = parameters'
         sig = Array(Float64, nstats)
@@ -104,19 +130,26 @@ end
 ##Absolute deviation to observations
 function ADO(x::Array{Float64, 1}, obs::Float64)
     median(abs(x - obs))
-end           
+end
 
 function evaldist(x::WeightedEuclidean, s::Array{Float64, 1})
     absdiff = abs(x.sobs - s)
     norm(absdiff .* x.w, 2.0)
 end
 
+"
+This is weighted Euclidean distance with summary statistics weighted by a matrix i.e. d(x,y)=(x-y)' W (x-y). (This can often be viewed as an empirical estimate of Mahalanobis distance.)
+It has two constructors.
+  * `MahalanobisEmp(sobs, Ω)`
+  Where `Ω` is used as the matrix W.
+  * `MahalanobisEmp(sobs)`
+  Here the weights are left undefined until initialisation of the distance takes place.
+"          
 type MahalanobisEmp <: ABCDistance
     sobs::Array{Float64,1}
     Ω::Array{Float64,2} ##Weights matrix. Empirical estimate of precision used.
 end
 
-##Leaves Ω undefined
 function MahalanobisEmp(sobs::Array{Float64, 1})
     MahalanobisEmp(sobs, eye(1))
 end

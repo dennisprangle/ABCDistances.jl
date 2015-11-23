@@ -1,11 +1,43 @@
-##N is how many acceptances to require at each iteration
-##α is proportion of particles to keep
-##maxsims - the algorithm will stop once this many simulations have been performed
-##nsims_for_init - how many simulations to store to initialise the distance function
-##adaptive - whether to use the adaptive or non-adaptive algorithm
-##store_init - whether to store sims which would be used for distance initialisation (sometimes useful for debugging or reporting algorithm operations)
-##diag_perturb - whether to diagonalise the variance matrix used for the perturbation
-##silent - if true no status messages are returned
+"
+Perform a version of ABC-PMC.
+This is the new algorithm proposed by the paper, Algorithm 4.
+Its arguments are as follows:
+
+* `abcinput`
+An `ABCInput` variable.
+
+* `N`
+Number of accepted particles in each iteration.
+
+* `α`
+A tuning parameter between 0 and 1 determining how fast the acceptance threshold is reduced. (In more detai, the acceptance threshold in iteration t is the α quantile of distances from particles which meet the acceptance criteria of the previous iteration.)
+
+* `maxsims`
+The algorithm terminates once this many simulations have been performed.
+
+* `nsims_for_init`
+How many simulations are stored to initialise the distance function (by default 10,000).
+
+* `adaptive` (optional)
+Whether the distance function should be adapted at each iteration.
+By default this is false, giving the variant algorithm mentioned in Section 4.1 of the paper.
+When true Algorithm 4 of the paper is implemented.
+
+* `store_init` (optional)
+Whether to store the parameters and simulations used to initialise the distance function in each iteration (useful to produce many of the paper's figures).
+These are stored for every iteration even if `adaptive` is false.
+By default false.
+
+* `diag_perturb` (optional)
+Whether perturbation should be based on a diagonalised estimate of the covariance.
+By default this is false, giving the perturbation described in Section 2.2 of the paper.
+
+* `silent` (optional)
+When true no progress bar or messages are shown during execution.
+By default false.
+
+The output is a `ABCPMCOutput` object.
+"
 function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; adaptive=false, store_init=false, diag_perturb=false, silent=false)
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
@@ -215,11 +247,20 @@ function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::
     weights ./ sum(weights)
 end
 
-##Standard ABC PMC
-##Included so comparisons can be made in the paper  
-##Distance is not updated, but can be set at end of 1st iteration (if initialise_dist is true)
-##The initial value of h can be specified by h1 argument (but not if initialise_dist is true)
-##TO DO: maybe sort out code overlap repetition with abcPMC function
+"
+Perform a version of ABC-PMC.
+This implements the older algorithms reviewed by the paper, Algorithms 2 and 3.
+Arguments are as for `abcPMC` with one removal (`adaptive`) and two additions
+
+* `initialise_dist` (optional)
+If true (the default) then the distance will be initialised at the end of the first iteration, giving Algorithm 3. If false a distance must be specified which does not need initialisation, giving Algorithm 2.
+
+* `h1` (optional)
+The acceptance threshold for the first iteration, by default Inf (accept everything).
+If `initialise_dist` is true, then this must be left at its default value.
+
+The output is a `ABCPMCOutput` object.
+"   
 function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; initialise_dist=true, store_init=false, diag_perturb=false, silent=false, h1=Inf)
     if initialise_dist && h1<Inf
         error("To initialise distance during the algorithm the first threshold must be Inf")
