@@ -16,8 +16,7 @@ sobs = [0.0,0.0]
 abcinput = ABCInput();
 abcinput.prior = MvNormal(1, 100.0);
 abcinput.sample_sumstats = sample_sumstats;
-abcinput.abcdist = MahalanobisDiag(sobs);
-abcinput.sobs = sobs;
+abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.nsumstats = 2;
 
 ##ABC rejection
@@ -27,10 +26,10 @@ abcRejection(abcinput, 1000, 0.1)
 
 ##ABC-PMC
 srand(1)
-out2 = abcPMC(abcinput, 200, 100, 5000);
-abcPMC(abcinput, 200, 100, 5000, adaptive=true);
-abcPMC(abcinput, 200, 100, 5000, store_init=true);
-abcPMC(abcinput, 200, 100, 5000, adaptive=true, store_init=true);
+out2 = abcPMC(abcinput, 200, 1/2, 5000);
+abcPMC(abcinput, 200, 1/2, 5000, adaptive=true);
+abcPMC(abcinput, 200, 1/2, 5000, store_init=true);
+abcPMC(abcinput, 200, 1/2, 5000, adaptive=true, store_init=true);
 
 ##Mean and variance functions
 parameter_means(out1)
