@@ -68,7 +68,7 @@ type ABCRejOutput <: ABCOutput
     nparameters::Int
     nsumstats::Int
     nsims::Int                  ##Number of simulations performed
-    nsuccesses::Int             ##Number of successful simulations, excluding early rejections. Usually equal to nsims.
+    nsuccesses::Int             ##Number of successful simulations. Usually equal to nsims.
     parameters::Array{Float64, 2} ##parameters[i,j] is ith parameter for jth accepted sim
     sumstats::Array{Float64, 2}   ##sumstats[i,j] is ith sumstat for jth accepted sim
     distances::Array{Float64, 1}  ##distance[i] is distance for ith accepted sim

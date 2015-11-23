@@ -73,7 +73,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         newpriorweights = Array(Float64, M)
         successes_thisit = 0
         if (firstit || adaptive || store_init)
-            ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
+            ##Initialise storage of simulated parameter/summary pairs
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
             pars_forinit = Array(Float64, (nparameters, nsims_for_init))
         end
@@ -110,7 +110,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
                 ##No rejection at this stage in first iteration
                 accept = true
             elseif (adaptive)
-                ##Accept if all prev distances less than corresponding thresholds.
+                ##Accept if all prev distances less than corresponding thresholds
                 accept = propgood(propstats, dists, thresholds)
             else
                 ##Accept if distance less than current threshold
@@ -150,7 +150,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         push!(dists, newdist)
         
         ##Calculate distances
-        distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:M ]
+        distances = Float64[ evaldist(newdist, newsumstats[:,i]) for i=1:M ]
         if !firstit
             oldoutput = copy(curroutput)
         end
@@ -236,14 +236,14 @@ end
 ##Calculate a single importance weight        
 function get1weight(x::Array{Float64,1}, priorweight::Float64, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(old.parameters)[2]
-    temp = [pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
+    temp = Float64[pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
     priorweight / sum(old.weights .* temp)
 end
 
 ##Calculates importance weights
 function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(current.parameters)[2]
-    weights = [get1weight(current.parameters[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
+    weights = Float64[get1weight(current.parameters[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
 end
 
@@ -299,7 +299,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         newpriorweights = Array(Float64, N)
         successes_thisit = 0
         if (firstit || store_init)
-            ##Initialise storage of simulated parameter/summary pairs for use initialising the distance function
+            ##Initialise storage of simulated parameter/summary pairs
             sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
             pars_forinit = Array(Float64, (nparameters, nsims_for_init))
         end
@@ -374,7 +374,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         end
         
         ##Calculate distances
-        distances = [ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
+        distances = Float64[ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
         if !firstit
             oldoutput = copy(curroutput)
         end
