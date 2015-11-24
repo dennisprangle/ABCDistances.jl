@@ -214,7 +214,8 @@ end
 
 ##Check if summary statistics meet acceptance requirement
 function propgood(s::Array{Float64, 1}, dist::ABCDistance, threshold::Float64)
-    return evaldist(dist, s)<=threshold
+    ##n.b. threshold==Inf gives acceptance even if dist is not initialised
+    threshold == Inf || evaldist(dist, s)<=threshold
 end
 
 ##Check if summary statistics meet all of previous acceptance requirements
