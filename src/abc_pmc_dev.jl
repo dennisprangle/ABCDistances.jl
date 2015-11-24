@@ -38,9 +38,13 @@ By default this is false, giving the perturbation described in Section 2.2 of th
 When true no progress bar or messages are shown during execution.
 By default false.
 
+* `h1` (optional)
+The acceptance threshold for the first iteration, by default `Inf` (accept everything).
+If this is not `Inf`, then `abcinput.abcdist` will be used in the first iteration, and so must not require initialisation or be pre-initialised.
+
 The output is a `ABCPMCOutput` object.
 "
-function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; store_init=false, diag_perturb=false, silent=false)
+function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; store_init=false, diag_perturb=false, silent=false, h1=Inf)
     if !silent
         prog = Progress(maxsims, 1) ##Progress meter
     end
@@ -52,7 +56,7 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
     ##We record a sequence of distances and thresholds
     ##(all distances the same but we record a sequence for consistency with other algorithm)
     dists = ABCDistance[abcinput.abcdist]
-    thresholds = Float64[Inf]
+    thresholds = Float64[h1]
     rejOutputs = ABCRejOutput[]
     cusims = Int[]
     ##Main loop
@@ -106,13 +110,8 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
                 sumstats_forinit[:,successes_thisit] = propstats
                 pars_forinit[:,successes_thisit] = proppars
             end
-            if (firstit)
-                ##No rejection at this stage in first iteration if we want to initialise distance
-                accept = true
-            else
-                ##Accept if all previous distances less than corresponding thresholds
-                accept = propgood(propstats, dists[2:end], thresholds[2:end])
-            end
+            ##Accept if all previous distances less than corresponding thresholds
+            accept = propgood(propstats, dists, thresholds)
             if (accept)
                 newparameters[:,nextparticle] = copy(proppars)
                 newsumstats[:,nextparticle] = copy(propstats)                
