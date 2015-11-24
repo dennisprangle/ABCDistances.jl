@@ -55,17 +55,9 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     cusims = Int[]
     ##Main loop
     while (simsdone < maxsims)
-        if !firstit
-            wv = WeightVec(curroutput.weights)
-            if (diag_perturb)
-                ##Calculate diagonalised variance of current weighted particle approximation
-                diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
-                perturbdist = MvNormal(2.0 .* diagvar)
-            else
-                ##Calculate variance of current weighted particle approximation
-                currvar = cov(curroutput.parameters, wv, vardim=2)
-                perturbdist = MvNormal(2.0 .* currvar)
-            end
+        samplefromprior = firstit
+        if !samplefromprior
+            perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
         newparameters = Array(Float64, (nparameters, M))
@@ -151,7 +143,7 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         
         ##Calculate distances
         distances = Float64[ evaldist(newdist, newsumstats[:,i]) for i=1:M ]
-        if !firstit
+        if !samplefromprior
             oldoutput = copy(curroutput)
         end
         curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, M, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
@@ -162,10 +154,10 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
         curroutput.parameters = curroutput.parameters[:,1:N]
         curroutput.sumstats = curroutput.sumstats[:,1:N]
         curroutput.distances = curroutput.distances[1:N]
-        if firstit
+        if samplefromprior
             curroutput.weights = ones(N)
         else
-            curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
+            curroutput.weights = getweights(curroutput.parameters, curroutput.weights, oldoutput, perturbdist)
         end
             
         ##Record output
@@ -212,6 +204,24 @@ function abcPMC(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, n
     output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
 
+"
+Return the perturbation distribution to be used given output `x` from the previous iteration.
+Argument `diag` specifies whether the perturbation should have a diagonal covariance.
+"
+function getperturbdist(x::ABCRejOutput, diag::Bool)
+    wv = WeightVec(x.weights)
+    if (diag)
+        ##Calculate diagonalised variance of current weighted particle approximation
+        diagvar = Float64[var(vec(x.parameters[i,:]), wv) for i in 1:x.nparameters]
+        perturbdist = MvNormal(2.0 .* diagvar)
+    else
+        ##Calculate variance of current weighted particle approximation
+        currvar = cov(x.parameters, wv, vardim=2)
+        perturbdist = MvNormal(2.0 .* currvar)
+    end
+    return perturbdist
+end
+
 ##Check if summary statistics meet acceptance requirement
 function propgood(s::Array{Float64, 1}, dist::ABCDistance, threshold::Float64)
     ##n.b. threshold==Inf gives acceptance even if dist is not initialised
@@ -234,17 +244,21 @@ function rimportance(out::ABCRejOutput, dist::MvNormal)
     out.parameters[:,i] + rand(dist)
 end
 
-##Calculate a single importance weight        
+"
+Calculate importance weight of parameters `x` given `priorweight`, their prior density, `old`, the output of the previous iteration and `perturbdist`, the perturbation distribution used in the importance density.
+"
 function get1weight(x::Array{Float64,1}, priorweight::Float64, old::ABCRejOutput, perturbdist::MvNormal)
     nparticles = size(old.parameters)[2]
     temp = Float64[pdf(perturbdist, x-old.parameters[:,i]) for i in 1:nparticles]
     priorweight / sum(old.weights .* temp)
 end
 
-##Calculates importance weights
-function getweights(current::ABCRejOutput, priorweights::Array{Float64,1}, old::ABCRejOutput, perturbdist::MvNormal)
-    nparticles = size(current.parameters)[2]
-    weights = Float64[get1weight(current.parameters[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
+"
+Calculates importance weights for parameters `pars` (columns are parameter vectors) given `priorweights`, their priors densities, `old`, the output of the previous iteration and `perturbdist`, the perturbation distribution used in the importance density.
+"
+function getweights(pars::Array{Float64, 2}, priorweights::Array{Float64,1}, old::ABCRejOutput, perturbdist::MvNormal)
+    nparticles = size(pars)[2]
+    weights = Float64[get1weight(pars[:,i], priorweights[i], old, perturbdist) for i in 1:nparticles]
     weights ./ sum(weights)
 end
 
@@ -257,11 +271,11 @@ Arguments are as for `abcPMC` with one removal (`adaptive`) and two additions
 If true (the default) then the distance will be initialised at the end of the first iteration, giving Algorithm 3. If false a distance must be specified which does not need initialisation, giving Algorithm 2.
 
 * `h1` (optional)
-The acceptance threshold for the first iteration, by default Inf (accept everything).
+The acceptance threshold for the first iteration, by default `Inf` (accept everything).
 If `initialise_dist` is true, then this must be left at its default value.
 
 The output is a `ABCPMCOutput` object.
-"   
+"
 function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, nsims_for_init=10000; initialise_dist=true, store_init=false, diag_perturb=false, silent=false, h1=Inf)
     if initialise_dist && h1<Inf
         error("To initialise distance during the algorithm the first threshold must be Inf")
@@ -282,17 +296,9 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
     cusims = Int[]
     ##Main loop
     while (simsdone < maxsims)
-        if !firstit
-            wv = WeightVec(curroutput.weights)
-            if (diag_perturb)
-                ##Calculate diagonalised variance of current weighted particle approximation
-                diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
-                perturbdist = MvNormal(2.0 .* diagvar)
-            else
-                ##Calculate variance of current weighted particle approximation
-                currvar = cov(curroutput.parameters, wv, vardim=2)
-                perturbdist = MvNormal(2.0 .* currvar)
-            end
+        samplefromprior = (firstit || thresholds[itsdone]==Inf)
+        if !samplefromprior
+            perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
         newparameters = Array(Float64, (nparameters, N))
@@ -308,7 +314,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         ##Loop to fill up new reference table
         while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
-            if (firstit)
+            if samplefromprior
                 proppars = rand(abcinput.prior)
             else
                 proppars = rimportance(curroutput, perturbdist)
@@ -368,7 +374,7 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
             newdist = dists[1]
         end
         ##Store new distance
-        if (firstit)
+        if firstit
             dists[1] = newdist
         else
             push!(dists, newdist)
@@ -376,18 +382,18 @@ function abcPMC_comparison(abcinput::ABCInput, N::Integer, α::Float64, maxsims:
         
         ##Calculate distances
         distances = Float64[ evaldist(newdist, newsumstats[:,i]) for i=1:N ]
-        if !firstit
+        if !samplefromprior
             oldoutput = copy(curroutput)
         end
         curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, distances, newpriorweights, newdist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
-        ##Calculate and store threshold for next iteration
         sortABCOutput!(curroutput)
+        ##Calculate and store threshold for next iteration
         newthreshold = curroutput.distances[k]
         push!(thresholds, newthreshold)
-        if firstit
+        if samplefromprior
             curroutput.weights = ones(N)
         else
-            curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
+            curroutput.weights = getweights(curroutput.parameters, curroutput.weights, oldoutput, perturbdist)
         end
             
         ##Record output

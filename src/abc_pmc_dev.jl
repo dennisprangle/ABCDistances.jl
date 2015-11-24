@@ -61,17 +61,9 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
     cusims = Int[]
     ##Main loop
     while (simsdone < maxsims)
-        if !firstit
-            wv = WeightVec(curroutput.weights)
-            if (diag_perturb)
-                ##Calculate diagonalised variance of current weighted particle approximation
-                diagvar = Float64[var(vec(curroutput.parameters[i,:]), wv) for i in 1:nparameters]
-                perturbdist = MvNormal(2.0 .* diagvar)
-            else
-                ##Calculate variance of current weighted particle approximation
-                currvar = cov(curroutput.parameters, wv, vardim=2)
-                perturbdist = MvNormal(2.0 .* currvar)
-            end
+        samplefromprior = (firstit || thresholds[itsdone]==Inf)
+        if !samplefromprior
+            perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
         newparameters = Array(Float64, (nparameters, N))
@@ -85,7 +77,7 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
         ##Loop to fill up new reference table
         while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
-            if (firstit)
+            if samplefromprior
                 proppars = rand(abcinput.prior)
             else
                 proppars = rimportance(curroutput, perturbdist)
@@ -132,15 +124,19 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
             pars_forinit = pars_forinit[:,1:successes_thisit]           
         end
 
-        if firstit
-            curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, zeros(N), ones(N), abcinput.abcdist, sumstats_forinit, pars_forinit) ##Set distances to 0 and use uninitialised distance variable
+        currdist = dists[itsdone]
+        if firstit && h1==Inf
+            currdistances = zeros(N)
+        else
+            currdistances = Float64[ evaldist(currdist, newsumstats[:,i]) for i in 1:N ]
+        end
+        if samplefromprior
+            newweights = ones(N)
         else
             oldoutput = copy(curroutput)
-            olddist = dists[itsdone]
-            olddistances = Float64[ evaldist(olddist, newsumstats[:,i]) for i in 1:N ]
-            curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, olddistances, newpriorweights, olddist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
-            curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
+            newweights = getweights(newparameters, newpriorweights, oldoutput, perturbdist)
         end
+        curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, currdistances, newweights, currdist, sumstats_forinit, pars_forinit) ##n.b. abcinput.abcdist may be uninitialised, but this is not problematic
 
         ##Create and store new distance
         newdist = init(abcinput.abcdist, sumstats_forinit, pars_forinit)
