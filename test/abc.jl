@@ -24,12 +24,19 @@ srand(1)
 out1 = abcRejection(abcinput, 1000, 200)
 abcRejection(abcinput, 1000, 0.1)
 
-##ABC-PMC
+##ABC-PMC (doesn't quite test all options)
 srand(1)
-out2 = abcPMC(abcinput, 200, 1/2, 5000);
-abcPMC(abcinput, 200, 1/2, 5000, adaptive=true);
-abcPMC(abcinput, 200, 1/2, 5000, store_init=true);
-abcPMC(abcinput, 200, 1/2, 5000, adaptive=true, store_init=true);
+out2 = abcPMC(abcinput, 200, 1/2, 5000, silent=true)
+abcPMC(abcinput, 200, 1/2, 5000, adaptive=true, silent=true)
+abcPMC(abcinput, 200, 1/2, 5000, store_init=true, silent=true)
+abcPMC(abcinput, 200, 1/2, 5000, adaptive=true, store_init=true, silent=true)
+
+abcPMC_comparison(abcinput, 200, 1/2, 5000, silent=true)
+abcPMC_comparison(abcinput, 200, 1/2, 5000, store_init=true, silent=true)
+abcPMC_comparison(abcinput, 200, 1/2, 5000, diag_perturb=true, silent=true)
+
+abcPMC_dev(abcinput, 200, 1/2, 5000, silent=true);
+abcPMC_dev(abcinput, 200, 1/2, 5000, store_init=true, silent=true);
 
 ##Mean and variance functions
 parameter_means(out1)
