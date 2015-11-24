@@ -51,8 +51,8 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
     firstit = true
     ##We record a sequence of distances and thresholds
     ##(all distances the same but we record a sequence for consistency with other algorithm)
-    dists = ABCDistance[]
-    thresholds = Float64[]
+    dists = ABCDistance[abcinput.abcdist]
+    thresholds = Float64[Inf]
     rejOutputs = ABCRejOutput[]
     cusims = Int[]
     ##Main loop
@@ -111,7 +111,7 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
                 accept = true
             else
                 ##Accept if all previous distances less than corresponding thresholds
-                accept = propgood(propstats, dists, thresholds)
+                accept = propgood(propstats, dists[2:end], thresholds[2:end])
             end
             if (accept)
                 newparameters[:,nextparticle] = copy(proppars)
@@ -137,7 +137,7 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
             curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, zeros(N), ones(N), abcinput.abcdist, sumstats_forinit, pars_forinit) ##Set distances to 0 and use uninitialised distance variable
         else
             oldoutput = copy(curroutput)
-            olddist = dists[itsdone-1]
+            olddist = dists[itsdone]
             olddistances = Float64[ evaldist(olddist, newsumstats[:,i]) for i in 1:N ]
             curroutput = ABCRejOutput(nparameters, abcinput.nsumstats, N, N, newparameters, newsumstats, olddistances, newpriorweights, olddist, sumstats_forinit, pars_forinit) ##Temporarily use prior weights
             curroutput.weights = getweights(curroutput, curroutput.weights, oldoutput, perturbdist)
@@ -194,5 +194,5 @@ function abcPMC_dev(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
         init_sims = Array(Array{Float64, 2}, 0)
         init_pars = Array(Array{Float64, 2}, 0)
     end
-    output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
+    output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists[1:itsdone], thresholds[1:itsdone], init_sims, init_pars)
 end
