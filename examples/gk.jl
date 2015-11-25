@@ -29,7 +29,7 @@ function _pdf{T<:Real}(d::GKPrior, x::AbstractVector{T})
 end
 
 ##Define model and summary statistics
-quantiles = [1250*i for i in 1:7];
+quantiles = Int[1250*i for i in 1:7];
 ndataset = 10000;
 
 function sample_sumstats(pars::Array{Float64,1})
