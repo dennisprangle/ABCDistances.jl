@@ -22,8 +22,8 @@ plot(LV_times, vec(LV_states[2,:]))
 PyPlot.subplot(122)
 plot(vec(LV_states[1,:]), vec(LV_states[2,:]))
 
-##Simulate observed data as in Owen et al 2014 (their dataset D2)
-obs_times = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0]
+##Simulate observed data as in Owen et al 2014 (their dataset D2), but without time 0
+obs_times = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0]
 state0 = [50, 100]
 theta0 = [1.0, 0.005, 0.6]
 srand(1)
@@ -83,36 +83,40 @@ srand(1);
 pmcoutput_nonadaptive = abcPMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
 pmcoutput_nonadaptive2 = abcPMC(abcinput, 200, 1/2, 50000);
 pmcoutput_adaptive = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+pmcoutput_adaptive2 = abcPMC_dev(abcinput, 200, 1/2, 50000, store_init=true);
 abcinput.abcdist = MahalanobisEmp(x0)
 pmcoutput_Mahalanobis = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
 
 ##Plot weights
 w1 = pmcoutput_nonadaptive.abcdists[1].w;
 w2 = pmcoutput_adaptive.abcdists[pmcoutput_adaptive.niterations].w;
+w3 = pmcoutput_adaptive2.abcdists[pmcoutput_adaptive2.niterations].w;
 PyPlot.figure(figsize=(12,6));
 PyPlot.subplot(121);
-plot(obs_times, w1[1:17]/sum(w1), "b-o");
-plot(obs_times, w2[1:17]/sum(w2), "g-^");
+plot(obs_times, w1[1:16]/sum(w1), "b-o");
+plot(obs_times, w2[1:16]/sum(w2), "g-^");
+plot(obs_times, w3[1:16]/sum(w3), "r-*");
 PyPlot.ylim([0.,0.18])
 PyPlot.xlabel("Time");
 PyPlot.ylabel("Relative weight");
 PyPlot.title("Prey");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"]);
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
 PyPlot.subplot(122);
-plot(obs_times, w1[18:34]/sum(w2), "b-o");
-plot(obs_times, w2[18:34]/sum(w2), "g-^");
+plot(obs_times, w1[17:32]/sum(w2), "b-o");
+plot(obs_times, w2[17:32]/sum(w2), "g-^");
+plot(obs_times, w3[17:32]/sum(w3), "r-*");
 PyPlot.ylim([0.,0.18])
 PyPlot.ylabel("Relative weight");
 PyPlot.xlabel("Time");
 PyPlot.title("Predators");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)"]);
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
 PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
 ##Plot MSEs. First only those algorithms used in paper.
-outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive);
+outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive, pmcoutput_adaptive2);
 pnames = ("Prey growth", "Predation", "Predator death");
-leg_code = ("b-o", "g-^");
+leg_code = ("b-o", "g-^", "r-*");
 PyPlot.figure(figsize=(12,6))
 for i in 1:length(outputs)
     s = outputs[i]
@@ -129,7 +133,7 @@ for i in 1:3
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
-    PyPlot.legend(["Algorithm 3", "Algorithm 4"])
+    PyPlot.legend(["Algorithm 3", "Algorithm 4", "Algorithm 5"])
 end
 PyPlot.tight_layout();
 PyPlot.savefig("LV_mse.pdf");
@@ -157,16 +161,16 @@ plotcounter = 1;
 for ss in ss_toplot    
     PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(ss[1:17,i]))
+        plot(obs_times, vec(ss[1:16,i]))
     end
-    plot(obs_times, x0[1:17], "ko", markersize=5)
+    plot(obs_times, x0[1:16], "ko", markersize=5)
     PyPlot.ylim([0,800])
     plotcounter += 1
     PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(ss[18:34,i]))
+        plot(obs_times, vec(ss[17:32,i]))
     end
-    plot(obs_times, x0[18:34], "ko", markersize=5)
+    plot(obs_times, x0[17:32], "ko", markersize=5)
     PyPlot.ylim([0,800])
     plotcounter += 1
 end
