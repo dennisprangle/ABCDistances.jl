@@ -13,14 +13,25 @@ Q = [ 2 0; ##Prey growth; 2 units of prey produced
 stoichiometry_LV = Stoichiometry(P, Q)
 
 ##An illustration of the complete data simulation function
-(LV_times, LV_states) = gillespie_sim(stoichiometry_LV, [200, 300], [0.5,0.0025,0.3], 100.0, 10000)
+srand(1)
+(LV_times, LV_states) = gillespie_sim(stoichiometry_LV, [50, 100], [0.5,0.0025,0.3], 100.0, 10000)
 
-PyPlot.figure()
-PyPlot.subplot(121)
-plot(LV_times, vec(LV_states[1,:]))
-plot(LV_times, vec(LV_states[2,:]))
-PyPlot.subplot(122)
+PyPlot.figure();
+PyPlot.subplot(121);
 plot(vec(LV_states[1,:]), vec(LV_states[2,:]))
+PyPlot.title("Trajectory")
+PyPlot.xlabel("Prey");
+PyPlot.ylabel("Predators");
+PyPlot.subplot(122);
+plot(LV_times, vec(LV_states[1,:]));
+plot(LV_times, vec(LV_states[2,:]));
+PyPlot.legend(["Prey", "Predators"]);
+PyPlot.ylim([0.,510.]); ##Stops legend blocking lines
+PyPlot.title("Trace plots");
+PyPlot.xlabel("Time");
+PyPlot.ylabel("Population");
+PyPlot.tight_layout();
+PyPlot.savefig("LV_full_data.pdf");
 
 ##Simulate observed data as in Owen et al 2014 (their dataset D2), but without time 0
 obs_times = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0]
@@ -28,12 +39,17 @@ state0 = [50, 100]
 theta0 = [1.0, 0.005, 0.6]
 srand(1)
 (LV_success, LV_obs) = gillespie_partial_sim(stoichiometry_LV, state0, theta0, obs_times, 100000)
-PyPlot.figure()
-plot(obs_times, vec(LV_obs[1,:]), "-o")
-plot(obs_times, vec(LV_obs[2,:]), "-o")
 σ0 = exp(2.3) ##Scale of observation noise
 nobs = 2*length(obs_times)
 x0 = vec(LV_obs') + σ0*randn(nobs); ##Noisy observations
+PyPlot.figure();
+plot(obs_times, x0[1:16], "-o");
+plot(obs_times, x0[17:32], "-o");
+PyPlot.legend(["Prey", "Predators"]);
+PyPlot.xlabel("Time");
+PyPlot.ylabel("Noisy observation");
+PyPlot.tight_layout();
+PyPlot.savefig("LV_obs.pdf");
 
 ####################################
 ##ABC ON A SINGLE DATASET
