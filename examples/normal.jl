@@ -106,7 +106,7 @@ s1 = pmcoutput_noadapt;
 s2 = pmcoutput_adapt_dev;
 MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:nits];
 MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:nits];
-PyPlot.figure(figsize=(12,3));
+PyPlot.figure(figsize=(8,8));
 plot(pmcoutput_noadapt.cusims[1:nits], log10(MSE1), "b-o");
 plot(pmcoutput_adapt.cusims[1:nits], log10(MSE2), "g-^");
 xlabel("Simulations");
