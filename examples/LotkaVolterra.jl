@@ -97,43 +97,36 @@ abcinput.nsumstats = nobs;
 
 srand(1);
 pmcoutput_nonadaptive = abcPMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
-pmcoutput_nonadaptive2 = abcPMC(abcinput, 200, 1/2, 50000);
-pmcoutput_adaptive = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
-pmcoutput_adaptive2 = abcPMC_dev(abcinput, 200, 1/2, 50000, store_init=true);
-abcinput.abcdist = MahalanobisEmp(x0)
-pmcoutput_Mahalanobis = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+pmcoutput_adaptive = abcPMC_dev(abcinput, 200, 1/2, 50000, store_init=true);
 
 ##Plot weights
 w1 = pmcoutput_nonadaptive.abcdists[1].w;
 w2 = pmcoutput_adaptive.abcdists[pmcoutput_adaptive.niterations].w;
-w3 = pmcoutput_adaptive2.abcdists[pmcoutput_adaptive2.niterations].w;
 PyPlot.figure(figsize=(12,6));
 PyPlot.subplot(121);
 plot(obs_times, w1[1:16]/sum(w1), "b-o");
 plot(obs_times, w2[1:16]/sum(w2), "g-^");
-plot(obs_times, w3[1:16]/sum(w3), "r-*");
 PyPlot.ylim([0.,0.18])
 PyPlot.xlabel("Time");
 PyPlot.ylabel("Relative weight");
 PyPlot.title("Prey");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
+PyPlot.legend(["Non-adaptive", "Adaptive\n(last iteration)"]);
 PyPlot.subplot(122);
 plot(obs_times, w1[17:32]/sum(w2), "b-o");
 plot(obs_times, w2[17:32]/sum(w2), "g-^");
-plot(obs_times, w3[17:32]/sum(w3), "r-*");
 PyPlot.ylim([0.,0.18])
 PyPlot.ylabel("Relative weight");
 PyPlot.xlabel("Time");
 PyPlot.title("Predators");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
+PyPlot.legend(["Non-adaptive", "Adaptive\n(last iteration)"]);
 PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
-##Plot MSEs. First only those algorithms used in paper.
-outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive, pmcoutput_adaptive2);
+##Plot MSEs. Only those algorithms used in talk.
+outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive);
 pnames = ("Prey growth", "Predation", "Predator death");
-leg_code = ("b-o", "g-^", "r-*");
-PyPlot.figure(figsize=(12,6))
+leg_code = ("b-o", "g-^");
+PyPlot.figure(figsize=(12,6));
 for i in 1:length(outputs)
     s = outputs[i]
     m = parameter_means(s)
@@ -149,29 +142,15 @@ for i in 1:3
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
-    PyPlot.legend(["Algorithm 3", "Algorithm 4", "Algorithm 5"])
 end
+PyPlot.legend(["Non-adaptive", "Adaptive"])
 PyPlot.tight_layout();
 PyPlot.savefig("LV_mse.pdf");
-
-##Add MSEs for other algorithms
-outputs = (pmcoutput_nonadaptive2, pmcoutput_Mahalanobis);
-leg_code = ("r-x", "k-|");
-for i in 1:length(outputs)
-    s = outputs[i]
-    m = parameter_means(s)
-    v = parameter_vars(s)
-    c = s.cusims ./ 1000;
-    for j in 1:3
-        PyPlot.subplot(1, 3, j)
-        PyPlot.plot(c, vec(log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2)), leg_code[i])
-    end
-end
 
 ##Simulations used for distance initialisation
 ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
                   pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
-ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)"];             
+ss_names = ["Non-adaptive\n(first iteration)", "Adaptive\n(last iteration)"];             
 PyPlot.figure(figsize=(12,12));
 plotcounter = 1;
 for ss in ss_toplot    
