@@ -66,7 +66,7 @@ pmcoutput_noadapt2.abcdists[1].w ##The same
 [pmcoutput_adapt_dev.abcdists[i].w for i in 1:pmcoutput_adapt_dev.niterations]
 
 ##Plot simulations from each importance density and acceptance regions
-##First for the two analyses shown in the paper
+##For the two analyses considered in talk
 nits = min(pmcoutput_noadapt.niterations, pmcoutput_adapt.niterations)
 PyPlot.figure(figsize=(12,12))
 PyPlot.subplot(221)
@@ -75,73 +75,35 @@ for i in 1:nits
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Algorithm 2 simulations")
+PyPlot.title("Simulations: non-adaptive algorithm")
 PyPlot.subplot(222)
 for i in 1:nits
-    plot_init(pmcoutput_adapt, i)
+    plot_init(pmcoutput_adapt_dev, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$") 
-PyPlot.title("Algorithm 4 simulations")
+PyPlot.title("Simulations: adaptive algorithm")
 PyPlot.subplot(223)
 for i in 1:nits
     plot_acc(pmcoutput_noadapt, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Algorithm 2 acceptance regions")
+PyPlot.title("Acceptance regions: non-adaptive algorithm")
 PyPlot.subplot(224)
-for i in 1:nits
-    plot_acc(pmcoutput_adapt, i)
-end
-PyPlot.xlabel(L"$s_1$")
-PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Algorithm 4 acceptance regions")
-PyPlot.tight_layout()
-PyPlot.savefig("normal_acc_regions.pdf")
-
-##Preceding plot for three analyses omitted from the paper
-##(Mahalanobis acc region omitted as this would need extra code)
-nits = min(pmcoutput_noadapt2.niterations, pmcoutput_Mahalanobis.niterations, pmcoutput_adapt_dev.niterations)
-PyPlot.figure(figsize=(12,12))
-PyPlot.subplot(231)
-for i in 1:nits
-    plot_init(pmcoutput_noadapt2, i)
-end
-PyPlot.xlabel(L"$s_1$")
-PyPlot.ylabel(L"$s_2$")
-PyPlot.subplot(232)
-for i in 1:nits
-    plot_init(pmcoutput_Mahalanobis, i)
-end
-PyPlot.xlabel(L"$s_1$")
-PyPlot.ylabel(L"$s_2$") 
-PyPlot.subplot(233)
-for i in 1:nits
-    plot_acc(pmcoutput_noadapt2, i)
-end
-PyPlot.xlabel(L"$s_1$")
-PyPlot.ylabel(L"$s_2$")
-PyPlot.subplot(234)
-for i in 1:nits
-    plot_init(pmcoutput_adapt_dev, i)
-end
-PyPlot.xlabel(L"$s_1$")
-PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Algorithm 5 simulations")
-PyPlot.subplot(235)
 for i in 1:nits
     plot_acc(pmcoutput_adapt_dev, i)
 end
 PyPlot.xlabel(L"$s_1$")
 PyPlot.ylabel(L"$s_2$")
-PyPlot.title("Algorithm 5 acceptance regions")
+PyPlot.title("Acceptance regions: adaptive algorithm")
 PyPlot.tight_layout()
+PyPlot.savefig("normal_acc_regions.pdf")
 
 ##Plot MSEs
 get_mses(p, w) = sum(p.^2.*w) / sum(w)
 s1 = pmcoutput_noadapt;
-s2 = pmcoutput_adapt;
+s2 = pmcoutput_adapt_dev;
 MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:nits];
 MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:nits];
 PyPlot.figure(figsize=(12,3));
@@ -149,18 +111,6 @@ plot(pmcoutput_noadapt.cusims[1:nits], log10(MSE1), "b-o");
 plot(pmcoutput_adapt.cusims[1:nits], log10(MSE2), "g-^");
 xlabel("Simulations");
 ylabel("log₁₀(MSE)");
-legend(["Algorithm 2","Algorithm 4"]);
+legend(["Non-adaptive","Adaptive"]);
 PyPlot.tight_layout();
 PyPlot.savefig("normal_MSE.pdf");
-
-##Add lines for other algorithms
-s3 = pmcoutput_noadapt2;
-s4 = pmcoutput_Mahalanobis;
-s5 = pmcoutput_adapt_dev;
-MSE3 = Float64[get_mses(s3.parameters[1,:,i], s3.weights[:,i])  for i in 1:nits];
-MSE4 = Float64[get_mses(s4.parameters[1,:,i], s4.weights[:,i])  for i in 1:nits];
-MSE5 = Float64[get_mses(s5.parameters[1,:,i], s5.weights[:,i])  for i in 1:nits];
-plot(pmcoutput_noadapt2.cusims[1:nits], log10(MSE3), "r-x");
-plot(pmcoutput_Mahalanobis.cusims[1:nits], log10(MSE4), "k-|");
-plot(pmcoutput_Mahalanobis.cusims[1:nits], log10(MSE5), "y-*");
-legend(["Algorithm 2","Algorithm 4","Alg 4 (non-adaptive)", "Alg 4 Mahalanobis", "Alg 5"]);
