@@ -112,7 +112,7 @@ PyPlot.ylabel("Relative weight");
 PyPlot.title("Prey");
 PyPlot.legend(["Non-adaptive", "Adaptive\n(last iteration)"]);
 PyPlot.subplot(122);
-plot(obs_times, w1[17:32]/sum(w2), "b-o");
+plot(obs_times, w1[17:32]/sum(w1), "b-o");
 plot(obs_times, w2[17:32]/sum(w2), "g-^");
 PyPlot.ylim([0.,0.18])
 PyPlot.ylabel("Relative weight");
