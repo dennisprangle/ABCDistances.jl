@@ -118,7 +118,7 @@ PyPlot.ylabel("Relative weight");
 PyPlot.title("Prey");
 PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
 PyPlot.subplot(122);
-plot(obs_times, w1[17:32]/sum(w2), "b-o");
+plot(obs_times, w1[17:32]/sum(w1), "b-o");
 plot(obs_times, w2[17:32]/sum(w2), "g-^");
 plot(obs_times, w3[17:32]/sum(w3), "r-*");
 PyPlot.ylim([0.,0.18])
