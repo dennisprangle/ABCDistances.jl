@@ -52,12 +52,17 @@ abcinput.abcdist = WeightedEuclidean(sobs);
 abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-PMC
+srand(2);
 pmcoutput1 = abcPMC(abcinput, 1000, 1/3, 1000000);
+srand(2);
 pmcoutput2 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
+srand(2);
 pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/3, 1000000);
 abcinput.abcdist = MahalanobisEmp(sobs);
+srand(2);
 pmcoutput4 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
 abcinput.abcdist = WeightedEuclidean(sobs);
+srand(2);
 pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/3, 1000000);
 
 ##Plot MSEs (and also bias^2, variance)
@@ -81,11 +86,12 @@ pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
     PyPlot.plot(c3, vec(log10(v3[i,:] .+ (b3[i,:]-theta0[i]).^2)), "b-o")
-    PyPlot.plot(c2, vec(log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2)), "g-^")
+    PyPlot.plot(c5, vec(log10(v5[i,:] .+ (b5[i,:]-theta0[i]).^2)), "g-^")
+    PyPlot.plot(c2, vec(log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2)), "y-*")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
-    PyPlot.legend(["Algorithm 3","Algorithm 4"])
+    PyPlot.legend(["Algorithm 3","Algorithm 4", "Algorithm 5"])
 end
 PyPlot.tight_layout();
 PyPlot.savefig("gk_mse.pdf")
@@ -102,7 +108,7 @@ for i in 1:4
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(estimated variance)")
-    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 4)","Non-adaptive (alg 3)", "Mahalanobis", "Alg 5"])
+    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 5)","Non-adaptive (alg 3)", "Mahalanobis", "Alg 4"])
 end
 
 PyPlot.figure()
@@ -116,8 +122,12 @@ for i in 1:4
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(bias squared)")
-    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 4)","Non-adaptive (alg 3)", "Mahalanobis", "Alg 5"])
+    PyPlot.legend(["Non-adaptive (alg 4)","Adaptive (alg 5)","Non-adaptive (alg 3)", "Mahalanobis", "Alg 4"])
 end
+
+##Posterior summaries
+hcat(b3[:,end], b5[:,end], b2[:,end])' ##Rows are algs 3,4,5 of paper
+sqrt(hcat(v3[:,end], v5[:,end], v2[:,end]))'
 
 ##Compute weights
 w1 = pmcoutput1.abcdists[1].w;
@@ -133,19 +143,30 @@ end
 
 ##Plot weights
 PyPlot.figure(figsize=(12,4))
-PyPlot.plot(quantiles, w3/sum(w3), "-o")
+PyPlot.plot(quantiles, w3/sum(w3), "b-o")
+wlast = vec(w5[pmcoutput5.niterations-1, :]) ##IS -1 NEEDED?!?!
+PyPlot.plot(quantiles, wlast/sum(wlast), "g-^")
 wlast = vec(w2[pmcoutput2.niterations, :])
-PyPlot.plot(quantiles, wlast/sum(wlast), "-^")
+PyPlot.plot(quantiles, wlast/sum(wlast), "y-*")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
-PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)"])
+PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)", "Algorithm 5\n(last iteration)"])
 PyPlot.xlabel("Order statistic")
 PyPlot.ylabel("Relative weight")
 PyPlot.tight_layout();
 PyPlot.savefig("gk_weights.pdf")
 
-wlast = vec(w5[pmcoutput5.niterations-1, :])
-PyPlot.plot(quantiles, wlast/sum(wlast), "-*")
-PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)", "Algorithm 5"])
+##Marginal posterior plots
+PyPlot.figure();
+samplesABC = (pmcoutput3.parameters[:,:,pmcoutput3.niterations], pmcoutput5.parameters[:,:,pmcoutput5.niterations], pmcoutput2.parameters[:,:,pmcoutput2.niterations]);
+weightsABC = (pmcoutput3.weights[:,pmcoutput3.niterations], pmcoutput5.weights[:,pmcoutput5.niterations], pmcoutput2.weights[:,pmcoutput2.niterations]);
+for i in 1:3 ##Loop over algorithms
+    ww = weightsABC[i]
+    for j in 1:4 ##Loop over parameters
+        pp = vec(samplesABC[i][j,:])
+        PyPlot.subplot(140+j)
+        PyPlot.plt[:hist](pp, weights=ww, normed=true)
+    end
+end
 
 ###############################
 ##ANALYSIS OF MULTIPLE DATASETS
