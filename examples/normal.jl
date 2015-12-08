@@ -143,16 +143,16 @@ get_mses(p, w) = sum(p.^2.*w) / sum(w)
 s1 = pmcoutput_noadapt;
 s2 = pmcoutput_adapt_dev;
 s3 = pmcoutput_adapt;
-MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:nits];
-MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:nits];
-MSE3 = Float64[get_mses(s3.parameters[1,:,i], s3.weights[:,i])  for i in 1:nits];
+MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:s1.niterations];
+MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:s2.niterations];
+MSE3 = Float64[get_mses(s3.parameters[1,:,i], s3.weights[:,i])  for i in 1:s3.niterations];
 PyPlot.figure(figsize=(12,3));
-plot(s1.cusims[1:nits], log10(MSE1), "b-o");
-plot(s2.cusims[1:nits], log10(MSE2), "g-^");
-plot(s3.cusims[1:nits], log10(MSE3), "y-*");
+plot(s1.cusims, log10(MSE1), "b-o");
+plot(s2.cusims, log10(MSE2), "g-^");
+plot(s3.cusims, log10(MSE3), "y-*");
 xlabel("Simulations");
 ylabel("log₁₀(MSE)");
-legend(["Algorithm 2","Algorithm 4","Algorithm 5"]);
+legend(["Algorithm 2","Algorithm 4","Algorithm 5"], loc="lower left");
 PyPlot.tight_layout();
 PyPlot.savefig("normal_MSE.pdf");
 
