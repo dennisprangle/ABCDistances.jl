@@ -54,17 +54,17 @@ abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-PMC
 srand(2);
-pmcoutput1 = abcPMC(abcinput, 1000, 1/3, 1000000);
+pmcoutput1 = abcPMC(abcinput, 1000, 1/2, 1000000);
 srand(2);
-pmcoutput2 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
+pmcoutput2 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true);
 srand(2);
-pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/3, 1000000);
+pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/2, 1000000);
 abcinput.abcdist = MahalanobisEmp(sobs);
 srand(2);
-pmcoutput4 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true);
+pmcoutput4 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true);
 abcinput.abcdist = WeightedEuclidean(sobs);
 srand(2);
-pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/3, 1000000);
+pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/2, 1000000);
 
 ##Plot MSEs (and also bias^2, variance)
 b1 = parameter_means(pmcoutput1);
@@ -165,7 +165,7 @@ for i in 1:3 ##Loop over algorithms
     for j in 1:4 ##Loop over parameters
         pp = vec(samplesABC[i][j,:])
         PyPlot.subplot(140+j)
-        PyPlot.plt[:hist](pp, weights=ww, normed=true)
+        PyPlot.plt[:hist](pp, weights=ww, normed=true, alpha=0.5)
     end
 end
 
@@ -200,7 +200,7 @@ PyPlot.figure();
 plot(alphas, log10(MSEs_adaptive), "r-x");
 plot(alphas, log10(MSEs_nonadaptive), "b-o");
 plot(alphas, log10(MSEs_adaptive2), "g-*");
-##Best alpha values seem to be in range 0.25 to 0.5
+##MSE has large flat minimum around alpha in [0.3, 0.7]
 
 
 ###############################
@@ -236,17 +236,17 @@ for i in 1:ndatasets
     theta0 = rand(GKPrior())
     (success, sobs) = sample_sumstats(theta0)
     abcinput.abcdist = WeightedEuclidean(sobs)
-    pmcoutput1 = abcPMC(abcinput, 1000, 1/3, 1000000, silent=true)
+    pmcoutput1 = abcPMC(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
-    pmcoutput2 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
+    pmcoutput2 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true, silent=true)
     next!(prog)
-    pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/3, 1000000, silent=true)
+    pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
     abcinput.abcdist = MahalanobisEmp(sobs)
-    pmcoutput4 = abcPMC(abcinput, 1000, 1/3, 1000000, adaptive=true, silent=true)
+    pmcoutput4 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true, silent=true)
     next!(prog)
     abcinput.abcdist = WeightedEuclidean(sobs)
-    pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/3, 1000000, silent=true)
+    pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
     
     trueθs[:,i] = theta0
