@@ -111,29 +111,29 @@ w3 = pmcoutput_adaptive2.abcdists[pmcoutput_adaptive2.niterations].w;
 PyPlot.figure(figsize=(12,6));
 PyPlot.subplot(121);
 plot(obs_times, w1[1:16]/sum(w1), "b-o");
-plot(obs_times, w2[1:16]/sum(w2), "g-^");
-plot(obs_times, w3[1:16]/sum(w3), "r-*");
-PyPlot.ylim([0.,0.18])
+plot(obs_times, w3[1:16]/sum(w3), "g-^");
+plot(obs_times, w2[1:16]/sum(w2), "y-*");
+PyPlot.ylim([0.,0.1])
 PyPlot.xlabel("Time");
 PyPlot.ylabel("Relative weight");
 PyPlot.title("Prey");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5\n(last iteration)"]);
 PyPlot.subplot(122);
 plot(obs_times, w1[17:32]/sum(w1), "b-o");
-plot(obs_times, w2[17:32]/sum(w2), "g-^");
-plot(obs_times, w3[17:32]/sum(w3), "r-*");
-PyPlot.ylim([0.,0.18])
+plot(obs_times, w3[17:32]/sum(w3), "g-^");
+plot(obs_times, w2[17:32]/sum(w2), "y-*");
+PyPlot.ylim([0.,0.1])
 PyPlot.ylabel("Relative weight");
 PyPlot.xlabel("Time");
 PyPlot.title("Predators");
-PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5"]);
+PyPlot.legend(["Algorithm 3","Algorithm 4\n(last iteration)","Algorithm 5\n(last iteration)"]);
 PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
 ##Plot MSEs. First only those algorithms used in paper.
-outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive, pmcoutput_adaptive2);
+outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive2, pmcoutput_adaptive);
 pnames = ("Prey growth", "Predation", "Predator death");
-leg_code = ("b-o", "g-^", "r-*");
+leg_code = ("b-o", "g-^", "y-*");
 PyPlot.figure(figsize=(12,6))
 for i in 1:length(outputs)
     s = outputs[i]
@@ -170,9 +170,16 @@ for i in 1:length(outputs)
 end
 
 ##Simulations used for distance initialisation
+
+##Uncomment these rows to compare all 3 outputs
+##ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
+##                  pmcoutput_adaptive2.init_sims[pmcoutput_adaptive2.niterations],
+##                  pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
+##ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)", "Algorithm 5\n(last iteration)"];
 ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
                   pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
-ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)"];             
+ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 5\n(last iteration)"];
+
 PyPlot.figure(figsize=(12,12));
 plotcounter = 1;
 for ss in ss_toplot    
@@ -181,14 +188,14 @@ for ss in ss_toplot
         plot(obs_times, vec(ss[1:16,i]))
     end
     plot(obs_times, x0[1:16], "ko", markersize=5)
-    PyPlot.ylim([0,800])
+    PyPlot.ylim([0,1000])
     plotcounter += 1
     PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
         plot(obs_times, vec(ss[17:32,i]))
     end
     plot(obs_times, x0[17:32], "ko", markersize=5)
-    PyPlot.ylim([0,800])
+    PyPlot.ylim([0,1000])
     plotcounter += 1
 end
 PyPlot.subplot(length(ss_toplot), 2, 1)
@@ -210,12 +217,29 @@ end
 PyPlot.tight_layout();
 PyPlot.savefig("LV_paths.pdf");
 
+##Marginal posterior plots
+PyPlot.figure();
+samplesABC = (pmcoutput_nonadaptive.parameters[:,:,pmcoutput_nonadaptive.niterations], pmcoutput_adaptive2.parameters[:,:,pmcoutput_adaptive2.niterations], pmcoutput_adaptive.parameters[:,:,pmcoutput_adaptive.niterations]);
+weightsABC = (pmcoutput_nonadaptive.weights[:,pmcoutput_nonadaptive.niterations], pmcoutput_adaptive2.weights[:,pmcoutput_adaptive2.niterations], pmcoutput_adaptive.weights[:,pmcoutput_adaptive.niterations]);
+for i in 1:3 ##Loop over algorithms
+    ww = weightsABC[i]
+    for j in 1:3 ##Loop over parameters
+        pp = vec(samplesABC[i][j,:])
+        PyPlot.subplot(130+j)
+        PyPlot.plt[:hist](pp, weights=ww, normed=true, alpha=0.5)
+    end
+end
+
+##Posterior summaries
+outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive2, pmcoutput_adaptive);
+mapreduce(p -> parameter_means(p)[:,p.niterations], hcat, outputs)' ##Posterior means
+mapreduce(p -> parameter_vars(p)[:,p.niterations] |> sqrt, hcat, outputs)' ##Posterior sds
 
 ##Investigate best choice of alpha (as requested by reviewers)
 function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
     mse = 0.0
     for i in 1:size(pars)[2]
-        mse += sum((pars[:, i] .- theta0).^2) * w[i]
+        mse += sum((pars[:, i] .- log(theta0)).^2) * w[i]
     end
     mse
 end
@@ -242,4 +266,4 @@ PyPlot.figure();
 plot(alphas, log10(MSEs_adaptive), "r-x");
 plot(alphas, log10(MSEs_nonadaptive), "b-o");
 plot(alphas, log10(MSEs_adaptive2), "g-*");
-##Best alpha values seem to be in range 0.1-0.9
+##Best alpha value around 0.5
