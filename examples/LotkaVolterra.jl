@@ -1,4 +1,5 @@
 using ABCDistances
+Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
 using PyPlot
 using Distributions
 import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
@@ -208,3 +209,37 @@ for i in 1:length(ss_toplot)
 end
 PyPlot.tight_layout();
 PyPlot.savefig("LV_paths.pdf");
+
+
+##Investigate best choice of alpha (as requested by reviewers)
+function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
+    mse = 0.0
+    for i in 1:size(pars)[2]
+        mse += sum((pars[:, i] .- theta0).^2) * w[i]
+    end
+    mse
+end
+
+alphas = 0.05:0.1:0.95;
+MSEs_adaptive = zeros(alphas);
+MSEs_adaptive2 = zeros(alphas);
+MSEs_nonadaptive = zeros(alphas);
+abcinput.abcdist = WeightedEuclidean(x0);
+srand(1);
+for i in 1:length(alphas)
+    x = abcPMC(abcinput, 200, alphas[i], 50000, adaptive=true)
+    nits = x.niterations
+    MSEs_adaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC_comparison(abcinput, 200, alphas[i], 50000)
+    nits = x.niterations
+    MSEs_nonadaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC_dev(abcinput, 200, alphas[i], 50000)
+    nits = x.niterations
+    MSEs_adaptive2[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])   
+end
+
+PyPlot.figure();
+plot(alphas, log10(MSEs_adaptive), "r-x");
+plot(alphas, log10(MSEs_nonadaptive), "b-o");
+plot(alphas, log10(MSEs_adaptive2), "g-*");
+##Best alpha values seem to be in range 0.1-0.9

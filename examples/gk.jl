@@ -1,6 +1,7 @@
 using ABCDistances
 using Distributions
 import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
+Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
 using PyPlot
 using StatsBase
 using ProgressMeter
@@ -146,6 +147,40 @@ PyPlot.savefig("gk_weights.pdf")
 wlast = vec(w5[pmcoutput5.niterations-1, :])
 PyPlot.plot(quantiles, wlast/sum(wlast), "-*")
 PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)", "Algorithm 5"])
+
+##Investigate best choice of alpha (as requested by reviewers)
+function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
+    mse = 0.0
+    for i in 1:size(pars)[2]
+        mse += sum((pars[:, i] .- theta0).^2) * w[i]
+    end
+    mse
+end
+
+alphas = 0.05:0.1:0.95;
+MSEs_adaptive = zeros(alphas);
+MSEs_adaptive2 = zeros(alphas);
+MSEs_nonadaptive = zeros(alphas);
+abcinput.abcdist = WeightedEuclidean(sobs);
+srand(1);
+for i in 1:length(alphas)
+    x = abcPMC(abcinput, 1000, alphas[i], 10^6, adaptive=true)
+    nits = x.niterations
+    MSEs_adaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC_comparison(abcinput, 1000, alphas[i], 10^6)
+    nits = x.niterations
+    MSEs_nonadaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC_dev(abcinput, 1000, alphas[i], 10^6)
+    nits = x.niterations
+    MSEs_adaptive2[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])    
+end
+
+PyPlot.figure();
+plot(alphas, log10(MSEs_adaptive), "r-x");
+plot(alphas, log10(MSEs_nonadaptive), "b-o");
+plot(alphas, log10(MSEs_adaptive2), "g-*");
+##Best alpha values seem to be in range 0.25 to 0.5
+
 
 ###############################
 ##ANALYSIS OF MULTIPLE DATASETS

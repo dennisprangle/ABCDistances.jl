@@ -1,5 +1,6 @@
 using ABCDistances
 using Distributions
+Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
 using PyPlot
 
 ######################################################################
@@ -164,3 +165,37 @@ plot(pmcoutput_noadapt2.cusims[1:nits], log10(MSE3), "r-x");
 plot(pmcoutput_Mahalanobis.cusims[1:nits], log10(MSE4), "k-|");
 plot(pmcoutput_Mahalanobis.cusims[1:nits], log10(MSE5), "y-*");
 legend(["Algorithm 2","Algorithm 4","Alg 4 (non-adaptive)", "Alg 4 Mahalanobis", "Alg 5"]);
+
+#####################################################    
+##Exploratory investigation of different alpha values
+##(as requested by reviewers)
+#####################################################
+alphas = 0.05:0.05:0.95;
+MSEs_adaptive = zeros(alphas);
+MSEs_adaptive2 = zeros(alphas);
+MSEs_nonadaptive = zeros(alphas);
+for i in 1:length(alphas)
+    abcinput.abcdist = WeightedEuclidean(sobs)
+    srand(20)
+    x = abcPMC(abcinput, 1000, alphas[i], 50000, adaptive=true)
+    nits = x.niterations
+    MSEs_adaptive[i] = (nits == 0) ? Inf : get_mses(x.parameters[1,:,nits], x.weights[:,nits])
+    srand(20)
+    x = abcPMC_comparison(abcinput, 1000, alphas[i], 50000)
+    nits = x.niterations
+    MSEs_nonadaptive[i] = (nits == 0) ? Inf : get_mses(x.parameters[1,:,nits], x.weights[:,nits])
+    if nits > 0
+        abcinput.abcdist = x.abcdists[1]
+    end
+    srand(20)
+    x = abcPMC_dev(abcinput, 1000, alphas[i], 50000)
+    nits = x.niterations
+    MSEs_adaptive2[i] = (nits == 0) ? Inf : get_mses(x.parameters[1,:,nits], x.weights[:,nits])    
+end
+
+
+PyPlot.figure();
+plot(alphas, log10(MSEs_adaptive), "r-x");
+plot(alphas, log10(MSEs_nonadaptive), "b-o");
+plot(alphas, log10(MSEs_adaptive2), "g-*");
+##MSE is minimised by alpha approximately equal to 0.5
