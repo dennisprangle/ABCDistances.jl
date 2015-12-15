@@ -6,6 +6,7 @@ It is created for the paper ["Adapting the ABC distance function"](http://arxiv.
 with the aim of comparing various approaches to distance selection.
 Code in the `examples` directory performs the analyses in the paper.
 Version 0.0.1 matches the v1 and v2 arXiv submissions and is written for Julia v0.3.
+Version 0.1.0 matches the v3 arXiv submission and is written for Julia v0.4.
 
 This document gives a quick usage example then documents the commands.
 
