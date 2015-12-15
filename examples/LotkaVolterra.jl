@@ -97,17 +97,17 @@ abcinput.abcdist = WeightedEuclidean(x0)
 abcinput.nsumstats = nobs;
 
 srand(1);
-pmcoutput_nonadaptive = abcPMC_comparison(abcinput, 200, 1/2, 50000, store_init=true);
-pmcoutput_nonadaptive2 = abcPMC(abcinput, 200, 1/2, 50000);
-pmcoutput_adaptive = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
-pmcoutput_adaptive2 = abcPMC_dev(abcinput, 200, 1/2, 50000, store_init=true);
+pmcoutput_alg3 = abcPMC3(abcinput, 200, 1/2, 50000, store_init=true);
+pmcoutput_alg3V = abcPMC3V(abcinput, 200, 1/2, 50000);
+pmcoutput_alg5 = abcPMC5(abcinput, 200, 1/2, 50000, store_init=true);
+pmcoutput_alg4 = abcPMC4(abcinput, 200, 1/2, 50000, store_init=true);
 abcinput.abcdist = MahalanobisEmp(x0)
-pmcoutput_Mahalanobis = abcPMC(abcinput, 200, 1/2, 50000, adaptive=true, store_init=true);
+pmcoutput_alg5_Mahalanobis = abcPMC5(abcinput, 200, 1/2, 50000, store_init=true);
 
 ##Plot weights
-w1 = pmcoutput_nonadaptive.abcdists[1].w;
-w2 = pmcoutput_adaptive.abcdists[pmcoutput_adaptive.niterations].w;
-w3 = pmcoutput_adaptive2.abcdists[pmcoutput_adaptive2.niterations].w;
+w1 = pmcoutput_alg3.abcdists[1].w;
+w2 = pmcoutput_alg5.abcdists[pmcoutput_alg5.niterations].w;
+w3 = pmcoutput_alg4.abcdists[pmcoutput_alg4.niterations].w;
 PyPlot.figure(figsize=(12,6));
 PyPlot.subplot(121);
 plot(obs_times, w1[1:16]/sum(w1), "b-o");
@@ -131,7 +131,7 @@ PyPlot.tight_layout();
 PyPlot.savefig("LV_weights.pdf");
 
 ##Plot MSEs. First only those algorithms used in paper.
-outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive2, pmcoutput_adaptive);
+outputs = (pmcoutput_alg3, pmcoutput_alg4, pmcoutput_alg5);
 pnames = ("Prey growth", "Predation", "Predator death");
 leg_code = ("b-o", "g-^", "y-*");
 PyPlot.figure(figsize=(12,6))
@@ -156,7 +156,7 @@ PyPlot.tight_layout();
 PyPlot.savefig("LV_mse.pdf");
 
 ##Add MSEs for other algorithms
-outputs = (pmcoutput_nonadaptive2, pmcoutput_Mahalanobis);
+outputs = (pmcoutput_alg3V, pmcoutput_alg5_Mahalanobis);
 leg_code = ("r-x", "k-|");
 for i in 1:length(outputs)
     s = outputs[i]
@@ -172,12 +172,12 @@ end
 ##Simulations used for distance initialisation
 
 ##Uncomment these rows to compare all 3 outputs
-##ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
-##                  pmcoutput_adaptive2.init_sims[pmcoutput_adaptive2.niterations],
-##                  pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
+##ss_toplot = Array[pmcoutput_alg3.init_sims[1],
+##                  pmcoutput_alg4.init_sims[pmcoutput_alg4.niterations],
+##                  pmcoutput_alg5.init_sims[pmcoutput_alg5.niterations]];
 ##ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 4\n(last iteration)", "Algorithm 5\n(last iteration)"];
-ss_toplot = Array[pmcoutput_nonadaptive.init_sims[1],
-                  pmcoutput_adaptive.init_sims[pmcoutput_adaptive.niterations]];
+ss_toplot = Array[pmcoutput_alg3.init_sims[1],
+                  pmcoutput_alg5.init_sims[pmcoutput_alg5.niterations]];
 ss_names = ["Algorithm 3\n(first iteration)", "Algorithm 5\n(last iteration)"];
 
 PyPlot.figure(figsize=(12,12));
@@ -219,8 +219,8 @@ PyPlot.savefig("LV_paths.pdf");
 
 ##Marginal posterior plots
 PyPlot.figure();
-samplesABC = (pmcoutput_nonadaptive.parameters[:,:,pmcoutput_nonadaptive.niterations], pmcoutput_adaptive2.parameters[:,:,pmcoutput_adaptive2.niterations], pmcoutput_adaptive.parameters[:,:,pmcoutput_adaptive.niterations]);
-weightsABC = (pmcoutput_nonadaptive.weights[:,pmcoutput_nonadaptive.niterations], pmcoutput_adaptive2.weights[:,pmcoutput_adaptive2.niterations], pmcoutput_adaptive.weights[:,pmcoutput_adaptive.niterations]);
+samplesABC = (pmcoutput_alg3.parameters[:,:,pmcoutput_alg3.niterations], pmcoutput_alg4.parameters[:,:,pmcoutput_alg4.niterations], pmcoutput_alg5.parameters[:,:,pmcoutput_alg5.niterations]);
+weightsABC = (pmcoutput_alg3.weights[:,pmcoutput_alg3.niterations], pmcoutput_alg4.weights[:,pmcoutput_alg4.niterations], pmcoutput_alg5.weights[:,pmcoutput_alg5.niterations]);
 for i in 1:3 ##Loop over algorithms
     ww = weightsABC[i]
     for j in 1:3 ##Loop over parameters
@@ -231,7 +231,7 @@ for i in 1:3 ##Loop over algorithms
 end
 
 ##Posterior summaries
-outputs = (pmcoutput_nonadaptive, pmcoutput_adaptive2, pmcoutput_adaptive);
+outputs = (pmcoutput_alg3, pmcoutput_alg4, pmcoutput_alg5);
 mapreduce(p -> parameter_means(p)[:,p.niterations], hcat, outputs)' ##Posterior means
 mapreduce(p -> parameter_vars(p)[:,p.niterations] |> sqrt, hcat, outputs)' ##Posterior sds
 
@@ -245,25 +245,25 @@ function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
 end
 
 alphas = 0.05:0.1:0.95;
-MSEs_adaptive = zeros(alphas);
-MSEs_adaptive2 = zeros(alphas);
-MSEs_nonadaptive = zeros(alphas);
+MSEs_alg5 = zeros(alphas);
+MSEs_alg4 = zeros(alphas);
+MSEs_alg3 = zeros(alphas);
 abcinput.abcdist = WeightedEuclidean(x0);
 srand(1);
 for i in 1:length(alphas)
-    x = abcPMC(abcinput, 200, alphas[i], 50000, adaptive=true)
+    x = abcPMC5(abcinput, 200, alphas[i], 50000)
     nits = x.niterations
-    MSEs_adaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
-    x = abcPMC_comparison(abcinput, 200, alphas[i], 50000)
+    MSEs_alg5[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC3(abcinput, 200, alphas[i], 50000)
     nits = x.niterations
-    MSEs_nonadaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
-    x = abcPMC_dev(abcinput, 200, alphas[i], 50000)
+    MSEs_alg3[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC4(abcinput, 200, alphas[i], 50000)
     nits = x.niterations
-    MSEs_adaptive2[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])   
+    MSEs_alg4[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])   
 end
 
 PyPlot.figure();
-plot(alphas, log10(MSEs_adaptive), "r-x");
-plot(alphas, log10(MSEs_nonadaptive), "b-o");
-plot(alphas, log10(MSEs_adaptive2), "g-*");
+plot(alphas, log10(MSEs_alg5), "r-x");
+plot(alphas, log10(MSEs_alg3), "b-o");
+plot(alphas, log10(MSEs_alg4), "g-*");
 ##Best alpha value around 0.5

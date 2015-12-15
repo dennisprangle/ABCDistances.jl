@@ -54,34 +54,34 @@ abcinput.nsumstats = length(quantiles);
 
 ##Perform ABC-PMC
 srand(2);
-pmcoutput1 = abcPMC(abcinput, 1000, 1/2, 1000000);
+pmcoutput_alg3V = abcPMC3V(abcinput, 1000, 1/2, 1000000);
 srand(2);
-pmcoutput2 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true);
+pmcoutput_alg5 = abcPMC5(abcinput, 1000, 1/2, 1000000);
 srand(2);
-pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/2, 1000000);
+pmcoutput_alg3 = abcPMC3(abcinput, 1000, 1/2, 1000000);
 abcinput.abcdist = MahalanobisEmp(sobs);
 srand(2);
-pmcoutput4 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true);
+pmcoutput_alg5_Mahalanobis = abcPMC5(abcinput, 1000, 1/2, 1000000);
 abcinput.abcdist = WeightedEuclidean(sobs);
 srand(2);
-pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/2, 1000000);
+pmcoutput_alg4 = abcPMC4(abcinput, 1000, 1/2, 1000000);
 
 ##Plot MSEs (and also bias^2, variance)
-b1 = parameter_means(pmcoutput1);
-b2 = parameter_means(pmcoutput2);
-b3 = parameter_means(pmcoutput3);
-b4 = parameter_means(pmcoutput4);
-b5 = parameter_means(pmcoutput5);
-v1 = parameter_vars(pmcoutput1);
-v2 = parameter_vars(pmcoutput2);
-v3 = parameter_vars(pmcoutput3);
-v4 = parameter_vars(pmcoutput4);
-v5 = parameter_vars(pmcoutput5);
-c1 = pmcoutput1.cusims ./ 1000;
-c2 = pmcoutput2.cusims ./ 1000;
-c3 = pmcoutput3.cusims ./ 1000;
-c4 = pmcoutput4.cusims ./ 1000;
-c5 = pmcoutput5.cusims ./ 1000;
+b1 = parameter_means(pmcoutput_alg3V);
+b2 = parameter_means(pmcoutput_alg5);
+b3 = parameter_means(pmcoutput_alg3);
+b4 = parameter_means(pmcoutput_alg5_Mahalanobis);
+b5 = parameter_means(pmcoutput_alg4);
+v1 = parameter_vars(pmcoutput_alg3V);
+v2 = parameter_vars(pmcoutput_alg5);
+v3 = parameter_vars(pmcoutput_alg3);
+v4 = parameter_vars(pmcoutput_alg5_Mahalanobis);
+v5 = parameter_vars(pmcoutput_alg4);
+c1 = pmcoutput_alg3V.cusims ./ 1000;
+c2 = pmcoutput_alg5.cusims ./ 1000;
+c3 = pmcoutput_alg3.cusims ./ 1000;
+c4 = pmcoutput_alg5_Mahalanobis.cusims ./ 1000;
+c5 = pmcoutput_alg4.cusims ./ 1000;
 PyPlot.figure(figsize=(12,8))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
@@ -131,23 +131,23 @@ hcat(b3[:,end], b5[:,end], b2[:,end])' ##Rows are algs 3,4,5 of paper
 sqrt(hcat(v3[:,end], v5[:,end], v2[:,end]))'
 
 ##Compute weights
-w1 = pmcoutput1.abcdists[1].w;
-w2 = Array(Float64, (pmcoutput2.niterations, length(quantiles)));
-for i in 1:pmcoutput2.niterations
-    w2[i,:] = pmcoutput2.abcdists[i].w
+w1 = pmcoutput_alg3V.abcdists[1].w;
+w2 = Array(Float64, (pmcoutput_alg5.niterations, length(quantiles)));
+for i in 1:pmcoutput_alg5.niterations
+    w2[i,:] = pmcoutput_alg5.abcdists[i].w
 end
-w3 = pmcoutput3.abcdists[1].w;
-w5 = Array(Float64, (pmcoutput5.niterations-1, length(quantiles)));
-for i in 2:pmcoutput5.niterations
-    w5[i-1,:] = pmcoutput5.abcdists[i].w
+w3 = pmcoutput_alg3.abcdists[1].w;
+w5 = Array(Float64, (pmcoutput_alg4.niterations-1, length(quantiles)));
+for i in 2:pmcoutput_alg4.niterations
+    w5[i-1,:] = pmcoutput_alg4.abcdists[i].w
 end
 
 ##Plot weights
 PyPlot.figure(figsize=(12,4))
 PyPlot.plot(quantiles, w3/sum(w3), "b-o")
-wlast = vec(w5[pmcoutput5.niterations-1, :]) ##IS -1 NEEDED?!?!
+wlast = vec(w5[pmcoutput_alg4.niterations-1, :]) ##IS -1 NEEDED?!?!
 PyPlot.plot(quantiles, wlast/sum(wlast), "g-^")
-wlast = vec(w2[pmcoutput2.niterations, :])
+wlast = vec(w2[pmcoutput_alg5.niterations, :])
 PyPlot.plot(quantiles, wlast/sum(wlast), "y-*")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
 PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)", "Algorithm 5\n(last iteration)"])
@@ -158,8 +158,8 @@ PyPlot.savefig("gk_weights.pdf")
 
 ##Marginal posterior plots
 PyPlot.figure();
-samplesABC = (pmcoutput3.parameters[:,:,pmcoutput3.niterations], pmcoutput5.parameters[:,:,pmcoutput5.niterations], pmcoutput2.parameters[:,:,pmcoutput2.niterations]);
-weightsABC = (pmcoutput3.weights[:,pmcoutput3.niterations], pmcoutput5.weights[:,pmcoutput5.niterations], pmcoutput2.weights[:,pmcoutput2.niterations]);
+samplesABC = (pmcoutput_alg3.parameters[:,:,pmcoutput_alg3.niterations], pmcoutput_alg4.parameters[:,:,pmcoutput_alg4.niterations], pmcoutput_alg5.parameters[:,:,pmcoutput_alg5.niterations]);
+weightsABC = (pmcoutput_alg3.weights[:,pmcoutput_alg3.niterations], pmcoutput_alg4.weights[:,pmcoutput_alg4.niterations], pmcoutput_alg5.weights[:,pmcoutput_alg5.niterations]);
 for i in 1:3 ##Loop over algorithms
     ww = weightsABC[i]
     for j in 1:4 ##Loop over parameters
@@ -179,27 +179,27 @@ function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
 end
 
 alphas = 0.05:0.1:0.95;
-MSEs_adaptive = zeros(alphas);
-MSEs_adaptive2 = zeros(alphas);
-MSEs_nonadaptive = zeros(alphas);
+MSEs_alg5 = zeros(alphas);
+MSEs_alg4 = zeros(alphas);
+MSEs_alg3 = zeros(alphas);
 abcinput.abcdist = WeightedEuclidean(sobs);
 srand(1);
 for i in 1:length(alphas)
-    x = abcPMC(abcinput, 1000, alphas[i], 10^6, adaptive=true)
+    x = abcPMC5(abcinput, 1000, alphas[i], 10^6)
     nits = x.niterations
-    MSEs_adaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
-    x = abcPMC_comparison(abcinput, 1000, alphas[i], 10^6)
+    MSEs_alg5[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC3(abcinput, 1000, alphas[i], 10^6)
     nits = x.niterations
-    MSEs_nonadaptive[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
-    x = abcPMC_dev(abcinput, 1000, alphas[i], 10^6)
+    MSEs_alg3[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])
+    x = abcPMC4(abcinput, 1000, alphas[i], 10^6)
     nits = x.niterations
-    MSEs_adaptive2[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])    
+    MSEs_alg4[i] = (nits == 0) ? Inf : get_mse(x.parameters[:,:,nits], x.weights[:,nits])    
 end
 
 PyPlot.figure();
-plot(alphas, log10(MSEs_adaptive), "r-x");
-plot(alphas, log10(MSEs_nonadaptive), "b-o");
-plot(alphas, log10(MSEs_adaptive2), "g-*");
+plot(alphas, log10(MSEs_alg5), "r-x");
+plot(alphas, log10(MSEs_alg3), "b-o");
+plot(alphas, log10(MSEs_alg4), "g-*");
 ##MSE has large flat minimum around alpha in [0.3, 0.7]
 
 
@@ -236,25 +236,25 @@ for i in 1:ndatasets
     theta0 = rand(GKPrior())
     (success, sobs) = sample_sumstats(theta0)
     abcinput.abcdist = WeightedEuclidean(sobs)
-    pmcoutput1 = abcPMC(abcinput, 1000, 1/2, 1000000, silent=true)
+    pmcoutput_alg3V = abcPMC3V(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
-    pmcoutput2 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true, silent=true)
+    pmcoutput_alg5 = abcPMC5(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
-    pmcoutput3 = abcPMC_comparison(abcinput, 1000, 1/2, 1000000, silent=true)
+    pmcoutput_alg3 = abcPMC3(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
     abcinput.abcdist = MahalanobisEmp(sobs)
-    pmcoutput4 = abcPMC(abcinput, 1000, 1/2, 1000000, adaptive=true, silent=true)
+    pmcoutput_alg5_Mahalanobis = abcPMC5(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
     abcinput.abcdist = WeightedEuclidean(sobs)
-    pmcoutput5 = abcPMC_dev(abcinput, 1000, 1/2, 1000000, silent=true)
+    pmcoutput_alg4 = abcPMC4(abcinput, 1000, 1/2, 1000000, silent=true)
     next!(prog)
     
     trueθs[:,i] = theta0
-    (squaredbiases[:,1,i], vars[:,1,i], RMSEs[:,1,i]) = getError(pmcoutput1, theta0)
-    (squaredbiases[:,2,i], vars[:,2,i], RMSEs[:,2,i]) = getError(pmcoutput2, theta0)
-    (squaredbiases[:,3,i], vars[:,3,i], RMSEs[:,3,i]) = getError(pmcoutput3, theta0)
-    (squaredbiases[:,4,i], vars[:,4,i], RMSEs[:,4,i]) = getError(pmcoutput4, theta0)
-    (squaredbiases[:,5,i], vars[:,5,i], RMSEs[:,5,i]) = getError(pmcoutput5, theta0)
+    (squaredbiases[:,1,i], vars[:,1,i], RMSEs[:,1,i]) = getError(pmcoutput_alg3V, theta0)
+    (squaredbiases[:,2,i], vars[:,2,i], RMSEs[:,2,i]) = getError(pmcoutput_alg5, theta0)
+    (squaredbiases[:,3,i], vars[:,3,i], RMSEs[:,3,i]) = getError(pmcoutput_alg3, theta0)
+    (squaredbiases[:,4,i], vars[:,4,i], RMSEs[:,4,i]) = getError(pmcoutput_alg5_Mahalanobis, theta0)
+    (squaredbiases[:,5,i], vars[:,5,i], RMSEs[:,5,i]) = getError(pmcoutput_alg4, theta0)
 end
 
 ##Summarise output

@@ -81,11 +81,10 @@ The next command runs an ABC PMC algorithm.
 See documentation for details of the arguments.
 
 ```julia
-out = abcPMC(abcinput, 200, 1/2, 10000);
+out = abcPMC3(abcinput, 200, 1/2, 10000);
 ```
 
 Marginal estimates of parameter mean and variances can be calculated from ABC PMC output as follows.
-Note that in this example the last 2 parameters are more accurately estimated by the adaptive method.
 
 ```julia
 parameter_means(out)
