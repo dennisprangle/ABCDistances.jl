@@ -147,14 +147,13 @@ function show(io::IO, out::ABCRejOutput)
     CI_lower = Array(Float64, p)
     CI_upper = Array(Float64, p)
     for i in 1:p
-        y = squeeze(out.parameters[i,:], 1)
-        (CI_lower[i], CI_upper[i]) = quantile(y, WeightVec(out.weights), [0.025,0.975])
+        (CI_lower[i], CI_upper[i]) = quantile(out.parameters[i,:], WeightVec(out.weights), [0.025,0.975])
     end
     print("ABC output, $k accepted values from $(out.nsims) simulations\n")
     ess = sum(out.weights)^2 / sum(out.weights.^2)
     print("Effective sample size $(round(ess,1))\n")
     print("Means and 95% credible intervals:\n")
-    for (i in 1:p)
+    for i in 1:p
         @printf("Parameter %d: %.2e (%.2e,%.2e)\n", i, means[i], CI_lower[i], CI_upper[i])
     end
 end
@@ -185,7 +184,7 @@ end
 
 function parameter_means(out::ABCPMCOutput)
     means = Array(Float64, (out.nparameters, out.niterations))
-    for (it in 1:out.niterations)
+    for it in 1:out.niterations
       means[:, it] = mean(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
     end
     means
@@ -202,7 +201,7 @@ end
 
 function parameter_vars(out::ABCPMCOutput)
     vars = Array(Float64, (out.nparameters, out.niterations))
-    for (it in 1:out.niterations)
+    for it in 1:out.niterations
       vars[:, it] = var(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
     end
     vars
@@ -214,13 +213,13 @@ If `out` is a `ABCRejOutput` object the output is a covariance matrix.
 If `out` is a `ABCPMCOutput` object the output is an array `x` where `x[:,:,i]` is a covariance matrix for the ith iteration.
 "
 function parameter_covs(out::ABCRejOutput)
-    cov(out.parameters, WeightVec(out.weights), vardim=2)
+    cov(out.parameters, WeightVec(out.weights), 2)
 end
 
 function parameter_covs(out::ABCPMCOutput)
     covs = Array(Float64, (out.nparameters, out.nparameters, out.niterations))
-    for (it in 1:out.niterations)
-      covs[:, :, it] = cov(out.parameters[:,:,it], WeightVec(out.weights[:,it]), vardim=2)
+    for it in 1:out.niterations
+      covs[:, :, it] = cov(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
     end
     covs
 end

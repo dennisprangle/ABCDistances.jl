@@ -86,9 +86,9 @@ PyPlot.figure(figsize=(12,8))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c3, vec(log10(v3[i,:] .+ (b3[i,:]-theta0[i]).^2)), "b-o")
-    PyPlot.plot(c5, vec(log10(v5[i,:] .+ (b5[i,:]-theta0[i]).^2)), "g-^")
-    PyPlot.plot(c2, vec(log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2)), "y-*")
+    PyPlot.plot(c3, log10(v3[i,:] .+ (b3[i,:]-theta0[i]).^2), "b-o")
+    PyPlot.plot(c5, log10(v5[i,:] .+ (b5[i,:]-theta0[i]).^2), "g-^")
+    PyPlot.plot(c2, log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2), "y-*")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
@@ -100,12 +100,12 @@ PyPlot.savefig("gk_mse.pdf")
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c1, vec(log10(v1[i,:])), "r-x")
-    PyPlot.plot(c2, vec(log10(v2[i,:])), "g-^")
-    PyPlot.plot(c3, vec(log10(v3[i,:])), "b-o")
-    PyPlot.plot(c4, vec(log10(v4[i,:])), "k-|")
-    PyPlot.plot(c5, vec(log10(v5[i,:])), "y-*")
-    PyPlot.axis([0,maximum([c1,c2,c3,c4,c5]),-4,1]);
+    PyPlot.plot(c1, log10(v1[i,:]), "r-x")
+    PyPlot.plot(c2, log10(v2[i,:]), "g-^")
+    PyPlot.plot(c3, log10(v3[i,:]), "b-o")
+    PyPlot.plot(c4, log10(v4[i,:]), "k-|")
+    PyPlot.plot(c5, log10(v5[i,:]), "y-*")
+    PyPlot.axis([0,maximum(vcat(c1,c2,c3,c4,c5)),-4,1]);
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(estimated variance)")
@@ -115,11 +115,11 @@ end
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c1, vec(log10((b1[i,:]-theta0[i]).^2)), "b-o")
-    PyPlot.plot(c2, vec(log10((b2[i,:]-theta0[i]).^2)), "g-^")
-    PyPlot.plot(c3, vec(log10((b3[i,:]-theta0[i]).^2)), "r-x")
-    PyPlot.plot(c4, vec(log10((b4[i,:]-theta0[i]).^2)), "k-|")
-    PyPlot.plot(c5, vec(log10((b5[i,:]-theta0[i]).^2)), "y-*")
+    PyPlot.plot(c1, log10((b1[i,:]-theta0[i]).^2), "b-o")
+    PyPlot.plot(c2, log10((b2[i,:]-theta0[i]).^2), "g-^")
+    PyPlot.plot(c3, log10((b3[i,:]-theta0[i]).^2), "r-x")
+    PyPlot.plot(c4, log10((b4[i,:]-theta0[i]).^2), "k-|")
+    PyPlot.plot(c5, log10((b5[i,:]-theta0[i]).^2), "y-*")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(bias squared)")
@@ -145,9 +145,9 @@ end
 ##Plot weights
 PyPlot.figure(figsize=(12,4))
 PyPlot.plot(quantiles, w3/sum(w3), "b-o")
-wlast = vec(w5[pmcoutput_alg4.niterations-1, :]) ##IS -1 NEEDED?!?!
+wlast = w5[pmcoutput_alg4.niterations-1, :] ##IS -1 NEEDED?!?!
 PyPlot.plot(quantiles, wlast/sum(wlast), "g-^")
-wlast = vec(w2[pmcoutput_alg5.niterations, :])
+wlast = w2[pmcoutput_alg5.niterations, :]
 PyPlot.plot(quantiles, wlast/sum(wlast), "y-*")
 ##PyPlot.axis([1.0,9.0,0.0,0.35]) ##Sometimes needed to fit legend in
 PyPlot.legend(["Algorithm 3", "Algorithm 4\n(last iteration)", "Algorithm 5\n(last iteration)"])
@@ -163,7 +163,7 @@ weightsABC = (pmcoutput_alg3.weights[:,pmcoutput_alg3.niterations], pmcoutput_al
 for i in 1:3 ##Loop over algorithms
     ww = weightsABC[i]
     for j in 1:4 ##Loop over parameters
-        pp = vec(samplesABC[i][j,:])
+        pp = samplesABC[i][j,:]
         PyPlot.subplot(140+j)
         PyPlot.plt[:hist](pp, weights=ww, normed=true, alpha=0.5)
     end
@@ -216,7 +216,7 @@ squaredbiases = zeros((4, 5, ndatasets));
 function getError(s::ABCPMCOutput, pobs::Array{Float64, 1})
     n = s.niterations
     p = s.parameters[:,:,n]
-    wv = WeightVec(vec(s.weights[:,n]))
+    wv = WeightVec(s.weights[:,n])
     bias2 = (mean(p, wv, 2) - pobs).^2
     bias2 = vec(bias2)
     v = var(p, wv, 2)

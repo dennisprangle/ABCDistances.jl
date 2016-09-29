@@ -104,20 +104,20 @@ function init(x::WeightedEuclidean, sumstats::Array{Float64, 2}, parameters::Arr
     if (nsims == 0)
         sig = ones(nstats)
     elseif x.scale_type=="MAD"
-        sig = Float64[MAD(vec(sumstats[i,:])) for i in 1:nstats]
+        sig = Float64[MAD(sumstats[i,:]) for i in 1:nstats]
     elseif x.scale_type=="sd"
-        sig = Float64[std(vec(sumstats[i,:])) for i in 1:nstats]
+        sig = Float64[std(sumstats[i,:]) for i in 1:nstats]
     elseif x.scale_type=="sdreg"
         P = parameters'
         sig = Array(Float64, nstats)
         for i in 1:nstats
-            y = vec(sumstats[i,:])
+            y = sumstats[i,:]
             beta = linreg(P, y)
             res = y - beta[1] - P * beta[2:end]
             sig[i] = std(res)
         end
     elseif x.scale_type=="ADO"
-        sig = [ADO(vec(sumstats[i,:]), x.sobs[i]) for i in 1:nstats]
+        sig = [ADO(sumstats[i,:], x.sobs[i]) for i in 1:nstats]
     end
     return WeightedEuclidean(x.sobs, 1.0./sig, x.scale_type)
 end
@@ -159,7 +159,7 @@ function init(x::MahalanobisEmp, sumstats::Array{Float64, 2})
     if (nsims == 0)
         Ω = eye(nstats)
     else
-        Ω = inv(cov(sumstats, vardim=2)) ##TO DO: need to deal with case where empirical covariance not invertible
+        Ω = inv(cov(sumstats, 2)) ##TO DO: need to deal with case where empirical covariance not invertible
     end
     return MahalanobisEmp(x.sobs, Ω)
 end

@@ -53,8 +53,8 @@ function Stoichiometry(P::Array{Int, 2}, Q::Array{Int, 2})
     input_species = Array(Int, 0)
     input_indices = Array(Int, 0)
     ##Store the non-zero elements of P
-    for (this_reaction in 1:nreactions)
-        for (this_species in 1:nspecies)
+    for this_reaction in 1:nreactions
+        for this_species in 1:nspecies
             this_index = P[this_reaction, this_species]
             if (this_index > 0)
                 push!(input_reactions, this_reaction)
@@ -73,7 +73,7 @@ end
 function gillespie_step(s::Stoichiometry, state::Array{Int, 1}, θ::Array{Float64, 1})
     rates = copy(θ)
     expdist = Exponential()  
-    for (i in 1:s.input_length)
+    for i in 1:s.input_length
         rates[s.input_reactions[i]] *= state[s.input_species[i]]^s.input_indices[i]
     end
     total_rate = sum(rates)

@@ -19,13 +19,13 @@ srand(1)
 
 PyPlot.figure();
 PyPlot.subplot(121);
-plot(vec(LV_states[1,:]), vec(LV_states[2,:]))
+plot(LV_states[1,:], LV_states[2,:])
 PyPlot.title("Trajectory")
 PyPlot.xlabel("Prey");
 PyPlot.ylabel("Predators");
 PyPlot.subplot(122);
-plot(LV_times, vec(LV_states[1,:]));
-plot(LV_times, vec(LV_states[2,:]));
+plot(LV_times, LV_states[1,:]);
+plot(LV_times, LV_states[2,:]);
 PyPlot.legend(["Prey", "Predators"]);
 PyPlot.ylim([0.,510.]); ##Stops legend blocking lines
 PyPlot.title("Trace plots");
@@ -142,7 +142,7 @@ for i in 1:length(outputs)
     c = s.cusims ./ 1000;
     for j in 1:3
         PyPlot.subplot(1, 3, j)
-        PyPlot.plot(c, vec(log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2)), leg_code[i])
+        PyPlot.plot(c, log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
     end
 end
 for i in 1:3
@@ -165,7 +165,7 @@ for i in 1:length(outputs)
     c = s.cusims ./ 1000;
     for j in 1:3
         PyPlot.subplot(1, 3, j)
-        PyPlot.plot(c, vec(log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2)), leg_code[i])
+        PyPlot.plot(c, log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
     end
 end
 
@@ -185,14 +185,14 @@ plotcounter = 1;
 for ss in ss_toplot    
     PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(ss[1:16,i]))
+        plot(obs_times, ss[1:16,i])
     end
     plot(obs_times, x0[1:16], "ko", markersize=5)
     PyPlot.ylim([0,1000])
     plotcounter += 1
     PyPlot.subplot(length(ss_toplot), 2, plotcounter)
     for i in 1:20
-        plot(obs_times, vec(ss[17:32,i]))
+        plot(obs_times, ss[17:32,i])
     end
     plot(obs_times, x0[17:32], "ko", markersize=5)
     PyPlot.ylim([0,1000])
@@ -224,7 +224,7 @@ weightsABC = (pmcoutput_alg3.weights[:,pmcoutput_alg3.niterations], pmcoutput_al
 for i in 1:3 ##Loop over algorithms
     ww = weightsABC[i]
     for j in 1:3 ##Loop over parameters
-        pp = vec(samplesABC[i][j,:])
+        pp = samplesABC[i][j,:]
         PyPlot.subplot(130+j)
         PyPlot.plt[:hist](pp, weights=ww, normed=true, alpha=0.5)
     end

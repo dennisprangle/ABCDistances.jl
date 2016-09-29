@@ -545,11 +545,11 @@ function getperturbdist(x::ABCRejOutput, diag::Bool)
     wv = WeightVec(x.weights)
     if (diag)
         ##Calculate diagonalised variance of current weighted particle approximation
-        diagvar = Float64[var(vec(x.parameters[i,:]), wv) for i in 1:x.nparameters]
+        diagvar = Float64[var(x.parameters[i,:], wv) for i in 1:x.nparameters]
         perturbdist = MvNormal(2.0 .* diagvar)
     else
         ##Calculate variance of current weighted particle approximation
-        currvar = cov(x.parameters, wv, vardim=2)
+        currvar = cov(x.parameters, wv, 2)
         perturbdist = MvNormal(2.0 .* currvar)
     end
     return perturbdist
