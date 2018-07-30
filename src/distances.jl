@@ -134,7 +134,9 @@ end
 
 function evaldist(x::WeightedEuclidean, s::Array{Float64, 1})
     absdiff = abs(x.sobs - s)
-    norm(absdiff .* x.w, 2.0)
+    wdiff = absdiff .* x.w
+    wdiff[absdiff .== 0.0] = 0.0 # Correctly handles case where absdiff zero and w infinite
+    norm(wdiff, 2.0)
 end
 
 "
