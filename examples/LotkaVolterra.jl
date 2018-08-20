@@ -1,5 +1,6 @@
 using ABCDistances
 Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
+##I sometimes also need run "export LD_LIBRARY_PATH=$HOME/.julia/v0.6/Conda/deps/usr/lib/:$LD_LIBRARY_PATH" - see https://github.com/JuliaPy/Conda.jl/issues/105
 using PyPlot
 using Distributions
 import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
@@ -81,7 +82,7 @@ end
 
 ##Define model
 function sample_sumstats(pars::Array{Float64,1})
-    (success, x) = gillespie_partial_sim(stoichiometry_LV, state0, exp(pars), obs_times, 100000)
+    (success, x) = gillespie_partial_sim(stoichiometry_LV, state0, exp.(pars), obs_times, 100000)
     if (success)
         stats = vec(x') + σ0*randn(nobs)
     else
@@ -142,7 +143,7 @@ for i in 1:length(outputs)
     c = s.cusims ./ 1000;
     for j in 1:3
         PyPlot.subplot(1, 3, j)
-        PyPlot.plot(c, log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
+        PyPlot.plot(c, log10.(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
     end
 end
 for i in 1:3
@@ -165,7 +166,7 @@ for i in 1:length(outputs)
     c = s.cusims ./ 1000;
     for j in 1:3
         PyPlot.subplot(1, 3, j)
-        PyPlot.plot(c, log10(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
+        PyPlot.plot(c, log10.(v[j,:] .+ (m[j,:]-log(theta0[j])).^2), leg_code[i])
     end
 end
 
@@ -233,7 +234,7 @@ end
 ##Posterior summaries
 outputs = (pmcoutput_alg3, pmcoutput_alg4, pmcoutput_alg5);
 mapreduce(p -> parameter_means(p)[:,p.niterations], hcat, outputs)' ##Posterior means
-mapreduce(p -> parameter_vars(p)[:,p.niterations] |> sqrt, hcat, outputs)' ##Posterior sds
+sqrt.(mapreduce(p -> parameter_vars(p)[:,p.niterations], hcat, outputs))' ##Posterior sds
 
 ##Investigate best choice of alpha (as requested by reviewers)
 function get_mse(pars::Array{Float64, 2}, w::Array{Float64, 1})
@@ -263,7 +264,7 @@ for i in 1:length(alphas)
 end
 
 PyPlot.figure();
-plot(alphas, log10(MSEs_alg5), "r-x");
-plot(alphas, log10(MSEs_alg3), "b-o");
-plot(alphas, log10(MSEs_alg4), "g-*");
+plot(alphas, log10.(MSEs_alg5), "r-x");
+plot(alphas, log10.(MSEs_alg3), "b-o");
+plot(alphas, log10.(MSEs_alg4), "g-*");
 ##Best alpha value around 0.5

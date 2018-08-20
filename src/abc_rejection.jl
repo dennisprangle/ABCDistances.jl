@@ -36,9 +36,9 @@ The output is a `ABCRejOutput` object.
 "
 function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
     nparameters = length(in.prior)
-    parameters = Array(Float64, (nparameters, nsims))
+    parameters = Array{Float64}(nparameters, nsims)
     sumstats = zeros(Float64, (in.nsumstats, nsims))
-    successes = Array(Bool, (nsims))
+    successes = Array{Bool}(nsims)
     prog = Progress(nsims, 1) ##Progress meter
     for i in 1:nsims
         pars = rand(in.prior)
@@ -59,8 +59,8 @@ function abcRejection(in::ABCInput, nsims::Integer; store_init=false)
         init_sims = sumstats
         init_pars = parameters
     else
-        init_sims = Array(Float64, (0,0))
-        init_pars = Array(Float64, (0,0))
+        init_sims = Array{Float64}(0,0)
+        init_pars = Array{Float64}(0,0)
     end
     out = ABCRejOutput(nparameters, in.nsumstats, nsims, nsuccesses, parameters, sumstats, distances, ones(nsims), newdist, init_sims, init_pars)
     sortABCOutput!(out)

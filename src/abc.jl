@@ -29,7 +29,7 @@ type ABCInput
 end
 
 ##Full results of an ABC analysis
-abstract ABCOutput
+abstract type ABCOutput end
 
 "
 This type contains output from a ABC-rejection algorithm.
@@ -144,10 +144,10 @@ end
 function show(io::IO, out::ABCRejOutput)
     (p,k) = size(out.parameters)
     means = parameter_means(out)
-    CI_lower = Array(Float64, p)
-    CI_upper = Array(Float64, p)
+    CI_lower = Array{Float64}(p)
+    CI_upper = Array{Float64}(p)
     for i in 1:p
-        (CI_lower[i], CI_upper[i]) = quantile(out.parameters[i,:], WeightVec(out.weights), [0.025,0.975])
+        (CI_lower[i], CI_upper[i]) = quantile(out.parameters[i,:], Weights(out.weights), [0.025,0.975])
     end
     print("ABC output, $k accepted values from $(out.nsims) simulations\n")
     ess = sum(out.weights)^2 / sum(out.weights.^2)
@@ -179,13 +179,13 @@ If `out` is a `ABCRejOutput` object the output is a vector of parameter means.
 If `out` is a `ABCPMCOutput` object the output is a matrix whose columns are parameter means in each iteration.
 "
 function parameter_means(out::ABCRejOutput)
-    vec(mean(out.parameters, WeightVec(out.weights), 2))
+    vec(mean(out.parameters, Weights(out.weights), 2))
 end
 
 function parameter_means(out::ABCPMCOutput)
-    means = Array(Float64, (out.nparameters, out.niterations))
+    means = Array{Float64}(out.nparameters, out.niterations)
     for it in 1:out.niterations
-      means[:, it] = mean(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
+      means[:, it] = mean(out.parameters[:,:,it], Weights(out.weights[:,it]), 2)
     end
     means
 end
@@ -196,13 +196,13 @@ If `out` is a `ABCRejOutput` object the output is a vector of parameter variance
 If `out` is a `ABCPMCOutput` object the output is a matrix whose columns are parameter variances in each iteration.
 "
 function parameter_vars(out::ABCRejOutput)
-  vec(var(out.parameters, WeightVec(out.weights), 2))
+  vec(var(out.parameters, Weights(out.weights), 2, corrected=false))
 end
 
 function parameter_vars(out::ABCPMCOutput)
-    vars = Array(Float64, (out.nparameters, out.niterations))
+    vars = Array{Float64}(out.nparameters, out.niterations)
     for it in 1:out.niterations
-      vars[:, it] = var(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
+      vars[:, it] = var(out.parameters[:,:,it], Weights(out.weights[:,it]), 2, corrected=false)
     end
     vars
 end
@@ -213,13 +213,13 @@ If `out` is a `ABCRejOutput` object the output is a covariance matrix.
 If `out` is a `ABCPMCOutput` object the output is an array `x` where `x[:,:,i]` is a covariance matrix for the ith iteration.
 "
 function parameter_covs(out::ABCRejOutput)
-    cov(out.parameters, WeightVec(out.weights), 2)
+    cov(out.parameters, Weights(out.weights), 2, corrected=false)
 end
 
 function parameter_covs(out::ABCPMCOutput)
-    covs = Array(Float64, (out.nparameters, out.nparameters, out.niterations))
+    covs = Array{Float64}(out.nparameters, out.nparameters, out.niterations)
     for it in 1:out.niterations
-      covs[:, :, it] = cov(out.parameters[:,:,it], WeightVec(out.weights[:,it]), 2)
+      covs[:, :, it] = cov(out.parameters[:,:,it], Weights(out.weights[:,it]), 2, corrected=false)
     end
     covs
 end

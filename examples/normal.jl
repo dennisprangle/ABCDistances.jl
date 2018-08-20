@@ -1,6 +1,7 @@
 using ABCDistances
 using Distributions
 Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
+##I sometimes also need run "export LD_LIBRARY_PATH=$HOME/.julia/v0.6/Conda/deps/usr/lib/:$LD_LIBRARY_PATH" - see https://github.com/JuliaPy/Conda.jl/issues/105
 using PyPlot
 
 ######################################################################
@@ -21,8 +22,8 @@ function plot_acc(out::ABCPMCOutput, i::Int)
     h < Inf || return nothing
     ##Plot appropriate ellipse
     θ = 0:0.1:6.3
-    x = (h/w[1])*sin(θ)+sobs[1]
-    y = (h/w[2])*cos(θ)+sobs[2]
+    x = (h/w[1])*sin.(θ)+sobs[1]
+    y = (h/w[2])*cos.(θ)+sobs[2]
     plot(x, y, lw=3, color=plot_cols[i])
     return nothing
 end
@@ -148,9 +149,9 @@ MSE1 = Float64[get_mses(s1.parameters[1,:,i], s1.weights[:,i])  for i in 1:s1.ni
 MSE2 = Float64[get_mses(s2.parameters[1,:,i], s2.weights[:,i])  for i in 1:s2.niterations];
 MSE3 = Float64[get_mses(s3.parameters[1,:,i], s3.weights[:,i])  for i in 1:s3.niterations];
 PyPlot.figure(figsize=(12,3));
-plot(s1.cusims, log10(MSE1), "b-o");
-plot(s2.cusims, log10(MSE2), "g-^");
-plot(s3.cusims, log10(MSE3), "y-*");
+plot(s1.cusims, log10.(MSE1), "b-o");
+plot(s2.cusims, log10.(MSE2), "g-^");
+plot(s3.cusims, log10.(MSE3), "y-*");
 xlabel("Simulations");
 ylabel("log₁₀(MSE)");
 legend(["Algorithm 2","Algorithm 4","Algorithm 5"], loc="lower left");
@@ -162,8 +163,8 @@ s4 = pmcoutput_alg3V;
 s5 = pmcoutput_alg5_Mahalanobis;
 MSE4 = Float64[get_mses(s4.parameters[1,:,i], s4.weights[:,i])  for i in 1:nits];
 MSE5 = Float64[get_mses(s5.parameters[1,:,i], s5.weights[:,i])  for i in 1:nits];
-plot(s4.cusims[1:nits], log10(MSE4), "r-x");
-plot(s5.cusims[1:nits], log10(MSE5), "k-|");
+plot(s4.cusims[1:nits], log10.(MSE4), "r-x");
+plot(s5.cusims[1:nits], log10.(MSE5), "k-|");
 legend(["Algorithm 2", "Algorithm 4", "Alg 5", "Alg 3 (variant)", "Alg 5 Mahalanobis"]);
     
 #####################################################    
@@ -195,7 +196,7 @@ end
 
 
 PyPlot.figure();
-plot(alphas, log10(MSEs_alg5), "r-x");
-plot(alphas, log10(MSEs_alg3), "b-o");
-plot(alphas, log10(MSEs_alg4), "g-*");
+plot(alphas, log10.(MSEs_alg5), "r-x");
+plot(alphas, log10.(MSEs_alg3), "b-o");
+plot(alphas, log10.(MSEs_alg4), "g-*");
 ##MSE is minimised by alpha approximately equal to 0.5

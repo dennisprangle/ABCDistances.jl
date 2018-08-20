@@ -1,6 +1,6 @@
 module ABCDistances
 
-using StatsBase: WeightVec, cov, sample, mean
+using StatsBase: Weights, cov, sample, mean
 using Distributions
 using ProgressMeter
 import Base.show, Base.copy

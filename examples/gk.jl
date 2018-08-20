@@ -2,6 +2,7 @@ using ABCDistances
 using Distributions
 import Distributions.length, Distributions._rand!, Distributions._pdf ##So that these can be extended
 Libdl.dlopen("/usr/lib/liblapack.so.3", Libdl.RTLD_GLOBAL); ##Needed to avoid PyPlot problems on my work machine
+##I sometimes also need run "export LD_LIBRARY_PATH=$HOME/.julia/v0.6/Conda/deps/usr/lib/:$LD_LIBRARY_PATH" - see https://github.com/JuliaPy/Conda.jl/issues/105
 using PyPlot
 using StatsBase
 using ProgressMeter
@@ -86,9 +87,9 @@ PyPlot.figure(figsize=(12,8))
 pnames = ("A", "B", "g", "k")
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c3, log10(v3[i,:] .+ (b3[i,:]-theta0[i]).^2), "b-o")
-    PyPlot.plot(c5, log10(v5[i,:] .+ (b5[i,:]-theta0[i]).^2), "g-^")
-    PyPlot.plot(c2, log10(v2[i,:] .+ (b2[i,:]-theta0[i]).^2), "y-*")
+    PyPlot.plot(c3, log10.(v3[i,:] .+ (b3[i,:]-theta0[i]).^2), "b-o")
+    PyPlot.plot(c5, log10.(v5[i,:] .+ (b5[i,:]-theta0[i]).^2), "g-^")
+    PyPlot.plot(c2, log10.(v2[i,:] .+ (b2[i,:]-theta0[i]).^2), "y-*")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(MSE)")
@@ -100,11 +101,11 @@ PyPlot.savefig("gk_mse.pdf")
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c1, log10(v1[i,:]), "r-x")
-    PyPlot.plot(c2, log10(v2[i,:]), "g-^")
-    PyPlot.plot(c3, log10(v3[i,:]), "b-o")
-    PyPlot.plot(c4, log10(v4[i,:]), "k-|")
-    PyPlot.plot(c5, log10(v5[i,:]), "y-*")
+    PyPlot.plot(c1, log10.(v1[i,:]), "r-x")
+    PyPlot.plot(c2, log10.(v2[i,:]), "g-^")
+    PyPlot.plot(c3, log10.(v3[i,:]), "b-o")
+    PyPlot.plot(c4, log10.(v4[i,:]), "k-|")
+    PyPlot.plot(c5, log10.(v5[i,:]), "y-*")
     PyPlot.axis([0,maximum(vcat(c1,c2,c3,c4,c5)),-4,1]);
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
@@ -115,11 +116,11 @@ end
 PyPlot.figure()
 for i in 1:4
     PyPlot.subplot(220+i)
-    PyPlot.plot(c1, log10((b1[i,:]-theta0[i]).^2), "b-o")
-    PyPlot.plot(c2, log10((b2[i,:]-theta0[i]).^2), "g-^")
-    PyPlot.plot(c3, log10((b3[i,:]-theta0[i]).^2), "r-x")
-    PyPlot.plot(c4, log10((b4[i,:]-theta0[i]).^2), "k-|")
-    PyPlot.plot(c5, log10((b5[i,:]-theta0[i]).^2), "y-*")
+    PyPlot.plot(c1, log10.((b1[i,:]-theta0[i]).^2), "b-o")
+    PyPlot.plot(c2, log10.((b2[i,:]-theta0[i]).^2), "g-^")
+    PyPlot.plot(c3, log10.((b3[i,:]-theta0[i]).^2), "r-x")
+    PyPlot.plot(c4, log10.((b4[i,:]-theta0[i]).^2), "k-|")
+    PyPlot.plot(c5, log10.((b5[i,:]-theta0[i]).^2), "y-*")
     PyPlot.title(pnames[i])
     PyPlot.xlabel("Number of simulations (000s)")
     PyPlot.ylabel("log₁₀(bias squared)")
@@ -128,16 +129,16 @@ end
 
 ##Posterior summaries
 hcat(b3[:,end], b5[:,end], b2[:,end])' ##Rows are algs 3,4,5 of paper
-sqrt(hcat(v3[:,end], v5[:,end], v2[:,end]))'
+sqrt.(hcat(v3[:,end], v5[:,end], v2[:,end]))'
 
 ##Compute weights
 w1 = pmcoutput_alg3V.abcdists[1].w;
-w2 = Array(Float64, (pmcoutput_alg5.niterations, length(quantiles)));
+w2 = Array{Float64}(pmcoutput_alg5.niterations, length(quantiles));
 for i in 1:pmcoutput_alg5.niterations
     w2[i,:] = pmcoutput_alg5.abcdists[i].w
 end
 w3 = pmcoutput_alg3.abcdists[1].w;
-w5 = Array(Float64, (pmcoutput_alg4.niterations-1, length(quantiles)));
+w5 = Array{Float64}(pmcoutput_alg4.niterations-1, length(quantiles));
 for i in 2:pmcoutput_alg4.niterations
     w5[i-1,:] = pmcoutput_alg4.abcdists[i].w
 end
@@ -197,9 +198,9 @@ for i in 1:length(alphas)
 end
 
 PyPlot.figure();
-plot(alphas, log10(MSEs_alg5), "r-x");
-plot(alphas, log10(MSEs_alg3), "b-o");
-plot(alphas, log10(MSEs_alg4), "g-*");
+plot(alphas, log10.(MSEs_alg5), "r-x");
+plot(alphas, log10.(MSEs_alg3), "b-o");
+plot(alphas, log10.(MSEs_alg4), "g-*");
 ##MSE has large flat minimum around alpha in [0.3, 0.7]
 
 
@@ -216,12 +217,12 @@ squaredbiases = zeros((4, 5, ndatasets));
 function getError(s::ABCPMCOutput, pobs::Array{Float64, 1})
     n = s.niterations
     p = s.parameters[:,:,n]
-    wv = WeightVec(s.weights[:,n])
+    wv = Weights(s.weights[:,n])
     bias2 = (mean(p, wv, 2) - pobs).^2
     bias2 = vec(bias2)
-    v = var(p, wv, 2)
+    v = var(p, wv, 2, corrected=false)
     v = vec(v)
-    rmse = sqrt(bias2 + v)
+    rmse = sqrt.(bias2 + v)
     (bias2, v, rmse)
 end
 

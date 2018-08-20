@@ -7,8 +7,9 @@ with the aim of comparing various approaches to distance selection.
 Code in the `examples` directory performs the analyses in the paper.
 
 Version 0.0.1 matches the v1 and v2 arXiv submissions and is written for Julia v0.3.
-Version 0.1.0 matches the v3 arXiv submission and is written for Julia v0.4.
+Version 0.1.0 matches the published paper (v3 on arXiv) and is written for Julia v0.4.
 Version 0.1.1 updates v0.1.0 for Julia v0.5.
+Version 0.2.0 is an update for Julia v0.6.
 
 This document gives a quick usage example then documents the commands.
 

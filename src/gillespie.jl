@@ -49,9 +49,9 @@ function Stoichiometry(P::Array{Int, 2}, Q::Array{Int, 2})
     end
     (nreactions, nspecies) = size(P)
     input_length = 0
-    input_reactions = Array(Int, 0)
-    input_species = Array(Int, 0)
-    input_indices = Array(Int, 0)
+    input_reactions = Array{Int}(0)
+    input_species = Array{Int}(0)
+    input_indices = Array{Int}(0)
     ##Store the non-zero elements of P
     for this_reaction in 1:nreactions
         for this_species in 1:nspecies
@@ -149,7 +149,7 @@ function gillespie_sim(s::Stoichiometry, state0::Array{Int, 1}, θ::Array{Float6
         error("Negative values in θ")
     end
     event_times = [0.0]
-    observations = Array(Int, (s.nspecies, 1))
+    observations = Array{Int}(s.nspecies, 1)
     observations[:,1] = state0
     obs_count = 2 ##Which observation we are currently looking for
     t_curr = 0.0

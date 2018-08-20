@@ -66,14 +66,14 @@ function abcPMC4(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, 
             perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
-        newparameters = Array(Float64, (nparameters, N))
-        newsumstats = Array(Float64, (abcinput.nsumstats, N))
-        newpriorweights = Array(Float64, N)
+        newparameters = Array{Float64}(nparameters, N)
+        newsumstats = Array{Float64}(abcinput.nsumstats, N)
+        newpriorweights = Array{Float64}(N)
         successes_thisit = 0            
         nextparticle = 1
         ##Initialise storage of simulated parameter/summary pairs
-        sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
-        pars_forinit = Array(Float64, (nparameters, nsims_for_init))
+        sumstats_forinit = Array{Float64}(abcinput.nsumstats, nsims_for_init)
+        pars_forinit = Array{Float64}(nparameters, nsims_for_init)
         ##Loop to fill up new reference table
         while (nextparticle <= N && simsdone<maxsims)
             ##Sample parameters from importance density
@@ -168,10 +168,10 @@ function abcPMC4(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, 
     end
         
     ##Put results into ABCPMCOutput object
-    parameters = Array(Float64, (nparameters, N, itsdone))
-    sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
-    distances = Array(Float64, (N, itsdone))
-    weights = Array(Float64, (N, itsdone))
+    parameters = Array{Float64}(nparameters, N, itsdone)
+    sumstats = Array{Float64}(abcinput.nsumstats, N, itsdone)
+    distances = Array{Float64}(N, itsdone)
+    weights = Array{Float64}(N, itsdone)
     for i in 1:itsdone        
         parameters[:,:,i] = rejOutputs[i].parameters
         sumstats[:,:,i] = rejOutputs[i].sumstats
@@ -179,15 +179,15 @@ function abcPMC4(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer, 
         weights[:,i] = rejOutputs[i].weights
     end
     if (store_init)
-        init_sims = Array(Array{Float64, 2}, itsdone)
-        init_pars = Array(Array{Float64, 2}, itsdone)
+        init_sims = Array{Array{Float64, 2}}(itsdone)
+        init_pars = Array{Array{Float64, 2}}(itsdone)
         for i in 1:itsdone
             init_sims[i] = rejOutputs[i].init_sims
             init_pars[i] = rejOutputs[i].init_pars
         end
     else
-        init_sims = Array(Array{Float64, 2}, 0)
-        init_pars = Array(Array{Float64, 2}, 0)
+        init_sims = Array{Array{Float64, 2}}(0)
+        init_pars = Array{Array{Float64, 2}}(0)
     end
     output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists[1:itsdone], thresholds[1:itsdone], init_sims, init_pars)
 end
@@ -219,14 +219,14 @@ function abcPMC_3V5(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
             perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
-        newparameters = Array(Float64, (nparameters, M))
-        newsumstats = Array(Float64, (abcinput.nsumstats, M))
-        newpriorweights = Array(Float64, M)
+        newparameters = Array{Float64}(nparameters, M)
+        newsumstats = Array{Float64}(abcinput.nsumstats, M)
+        newpriorweights = Array{Float64}(M)
         successes_thisit = 0
         if (firstit || adaptive || store_init)
             ##Initialise storage of simulated parameter/summary pairs
-            sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
-            pars_forinit = Array(Float64, (nparameters, nsims_for_init))
+            sumstats_forinit = Array{Float64}(abcinput.nsumstats, nsims_for_init)
+            pars_forinit = Array{Float64}(nparameters, nsims_for_init)
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -289,8 +289,8 @@ function abcPMC_3V5(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
             end
         else
             ##Create some empty arrays to use as arguments
-            sumstats_forinit = Array(Float64, (0,0))
-            pars_forinit = Array(Float64, (0,0))
+            sumstats_forinit = Array{Float64}(0,0)
+            pars_forinit = Array{Float64}(0,0)
         end
         ##Create new distance if needed
         if (firstit || adaptive)
@@ -339,10 +339,10 @@ function abcPMC_3V5(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
     end
         
     ##Put results into ABCPMCOutput object
-    parameters = Array(Float64, (nparameters, N, itsdone))
-    sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
-    distances = Array(Float64, (N, itsdone))
-    weights = Array(Float64, (N, itsdone))
+    parameters = Array{Float64}(nparameters, N, itsdone)
+    sumstats = Array{Float64}(abcinput.nsumstats, N, itsdone)
+    distances = Array{Float64}(N, itsdone)
+    weights = Array{Float64}(N, itsdone)
     for i in 1:itsdone        
         parameters[:,:,i] = rejOutputs[i].parameters
         sumstats[:,:,i] = rejOutputs[i].sumstats
@@ -350,15 +350,15 @@ function abcPMC_3V5(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Intege
         weights[:,i] = rejOutputs[i].weights
     end
     if (store_init)
-        init_sims = Array(Array{Float64, 2}, itsdone)
-        init_pars = Array(Array{Float64, 2}, itsdone)
+        init_sims = Array{Array{Float64, 2}}(itsdone)
+        init_pars = Array{Array{Float64, 2}}(itsdone)
         for i in 1:itsdone
             init_sims[i] = rejOutputs[i].init_sims
             init_pars[i] = rejOutputs[i].init_pars
         end
     else
-        init_sims = Array(Array{Float64, 2}, 0)
-        init_pars = Array(Array{Float64, 2}, 0)
+        init_sims = Array{Array{Float64, 2}}(0)
+        init_pars = Array{Array{Float64, 2}}(0)
     end
     output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
@@ -395,14 +395,14 @@ function abcPMC_23(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer
             perturbdist = getperturbdist(curroutput, diag_perturb)
         end
         ##Initialise new reference table
-        newparameters = Array(Float64, (nparameters, N))
-        newsumstats = Array(Float64, (abcinput.nsumstats, N))
-        newpriorweights = Array(Float64, N)
+        newparameters = Array{Float64}(nparameters, N)
+        newsumstats = Array{Float64}(abcinput.nsumstats, N)
+        newpriorweights = Array{Float64}(N)
         successes_thisit = 0
         if (firstit || store_init)
             ##Initialise storage of simulated parameter/summary pairs
-            sumstats_forinit = Array(Float64, (abcinput.nsumstats, nsims_for_init))
-            pars_forinit = Array(Float64, (nparameters, nsims_for_init))
+            sumstats_forinit = Array{Float64}(abcinput.nsumstats, nsims_for_init)
+            pars_forinit = Array{Float64}(nparameters, nsims_for_init)
         end
         nextparticle = 1
         ##Loop to fill up new reference table
@@ -511,10 +511,10 @@ function abcPMC_23(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer
     end
         
     ##Put results into ABCPMCOutput object
-    parameters = Array(Float64, (nparameters, N, itsdone))
-    sumstats = Array(Float64, (abcinput.nsumstats, N, itsdone))
-    distances = Array(Float64, (N, itsdone))
-    weights = Array(Float64, (N, itsdone))
+    parameters = Array{Float64}(nparameters, N, itsdone)
+    sumstats = Array{Float64}(abcinput.nsumstats, N, itsdone)
+    distances = Array{Float64}(N, itsdone)
+    weights = Array{Float64}(N, itsdone)
     for i in 1:itsdone        
         parameters[:,:,i] = rejOutputs[i].parameters
         sumstats[:,:,i] = rejOutputs[i].sumstats
@@ -522,15 +522,15 @@ function abcPMC_23(abcinput::ABCInput, N::Integer, α::Float64, maxsims::Integer
         weights[:,i] = rejOutputs[i].weights
     end
     if (store_init)
-        init_sims = Array(Array{Float64, 2}, itsdone)
-        init_pars = Array(Array{Float64, 2}, itsdone)
+        init_sims = Array{Array{Float64, 2}}(itsdone)
+        init_pars = Array{Array{Float64, 2}}(itsdone)
         for i in 1:itsdone
             init_sims[i] = rejOutputs[i].init_sims
             init_pars[i] = rejOutputs[i].init_pars
         end
     else
-        init_sims = Array(Array{Float64, 2}, 0)
-        init_pars = Array(Array{Float64, 2}, 0)
+        init_sims = Array{Array{Float64, 2}}(0)
+        init_pars = Array{Array{Float64, 2}}(0)
     end
     output = ABCPMCOutput(nparameters, abcinput.nsumstats, itsdone, simsdone, cusims, parameters, sumstats, distances, weights, dists, thresholds, init_sims, init_pars)
 end
@@ -542,14 +542,14 @@ Return the perturbation distribution to be used given output `x` from the previo
 Argument `diag` specifies whether the perturbation should have a diagonal covariance.
 "
 function getperturbdist(x::ABCRejOutput, diag::Bool)
-    wv = WeightVec(x.weights)
+    wv = Weights(x.weights)
     if (diag)
         ##Calculate diagonalised variance of current weighted particle approximation
-        diagvar = Float64[var(x.parameters[i,:], wv) for i in 1:x.nparameters]
+        diagvar = Float64[var(x.parameters[i,:], wv, corrected=false) for i in 1:x.nparameters]
         perturbdist = MvNormal(2.0 .* diagvar)
     else
         ##Calculate variance of current weighted particle approximation
-        currvar = cov(x.parameters, wv, 2)
+        currvar = cov(x.parameters, wv, 2, corrected=false)
         perturbdist = MvNormal(2.0 .* currvar)
     end
     return perturbdist
@@ -573,7 +573,7 @@ end
 
 ##Samples from importance density defined by prev output
 function rimportance(out::ABCRejOutput, dist::MvNormal)
-    i = sample(WeightVec(out.weights))
+    i = sample(Weights(out.weights))
     out.parameters[:,i] + rand(dist)
 end
 
